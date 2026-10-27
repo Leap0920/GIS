@@ -1,0 +1,2142 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GreenSpace-LST Console — Quezon City Study Area</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   GreenSpace-LST Console
+   Design read: GIS environmental analytics console for
+   researchers and LGU planners. Tactical-technical cartographic
+   language. Geist + Geist Mono on a deep charcoal substrate,
+   single amber accent, data-semantic colormaps.
+   Dials: VARIANCE 4 / MOTION 3 / DENSITY 8
+   (density > 7  ->  every numeral is monospace)
+   ============================================================ */
+
+:root[data-theme="dark"]{
+  --bg:#0B0B0D; --panel:#131317; --panel-2:#17171C; --panel-3:#1D1D23;
+  --line:rgba(255,255,255,.08); --line-strong:rgba(255,255,255,.17);
+  --text:#EDEDF0; --text-2:#9A9AA4; --text-3:#6B6B75;
+  --accent:#E8A33D; --accent-ink:#0B0B0D;
+  --good:#7FBF6A; --warn:#E0603A; --cool:#5FA8C4;
+  --map-out:#0A0A0C; --map-dim:rgba(9,9,11,.62);
+  --map-halo:rgba(0,0,0,.75); --map-ink:rgba(255,255,255,.84);
+  --map-grid:rgba(255,255,255,.10); --map-edge:rgba(255,255,255,.36);
+  --map-road:rgba(255,255,255,.17); --map-road-casing:rgba(0,0,0,.45);
+  --map-river:rgba(104,158,182,.55); --map-extent:rgba(255,255,255,.26);
+}
+:root[data-theme="light"]{
+  --bg:#F7F6F3; --panel:#FFFFFF; --panel-2:#FBFBFA; --panel-3:#F1F0EC;
+  --line:#E1E0DA; --line-strong:#C6C4BB;
+  --text:#141417; --text-2:#4B4B53; --text-3:#6C6C75;
+  --accent:#B4701A; --accent-ink:#FFFFFF;
+  --good:#3F6B32; --warn:#A83A18; --cool:#2C6E88;
+  --map-out:#EFEEE9; --map-dim:rgba(247,246,243,.66);
+  --map-halo:rgba(255,255,255,.8); --map-ink:rgba(20,20,24,.86);
+  --map-grid:rgba(0,0,0,.13); --map-edge:rgba(20,20,24,.55);
+  --map-road:rgba(20,20,24,.42); --map-road-casing:rgba(255,255,255,.32);
+  --map-river:rgba(44,110,136,.6); --map-extent:rgba(20,20,24,.3);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:'Geist','Geist Sans',-apple-system,'Segoe UI',system-ui,sans-serif;
+  font-size:13px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  display:flex; flex-direction:column; min-height:100dvh;
+}
+.mono,.num{font-family:'Geist Mono','JetBrains Mono','SF Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+
+:focus{outline:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* ---------- top bar ---------- */
+.topbar{
+  display:flex; align-items:center; gap:18px;
+  padding:0 16px; height:54px; flex:0 0 54px;
+  border-bottom:1px solid var(--line); background:var(--panel);
+  position:sticky; top:0; z-index:40;
+}
+.mark{width:24px;height:24px;flex:0 0 24px;border-radius:5px;border:1px solid var(--line-strong);
+  display:grid;place-items:center;background:var(--panel-3)}
+.mark svg{width:13px;height:13px}
+.brand{display:flex;align-items:baseline;gap:9px;min-width:0}
+.brand h1{font-size:13px;font-weight:600;letter-spacing:-.01em;white-space:nowrap}
+.brand span{font-size:11px;color:var(--text-3);white-space:nowrap}
+
+nav.tabs{display:flex;gap:2px;margin-left:6px}
+.tab{appearance:none;border:1px solid transparent;background:transparent;cursor:pointer;
+  font:inherit;font-size:11.5px;color:var(--text-2);padding:5px 11px;border-radius:6px;
+  transition:background .22s cubic-bezier(.32,.72,0,1), color .22s cubic-bezier(.32,.72,0,1)}
+.tab:hover{color:var(--text);background:var(--panel-3)}
+.tab[aria-selected="true"]{color:var(--text);background:var(--panel-3);border-color:var(--line-strong)}
+
+.spacer{flex:1}
+.badge{display:inline-flex;align-items:center;gap:6px;
+  font-family:'Geist Mono',ui-monospace,monospace;font-size:9.5px;
+  letter-spacing:.09em;text-transform:uppercase;padding:4px 9px;border-radius:999px;
+  border:1px solid color-mix(in srgb,var(--accent) 42%,transparent);color:var(--text);
+  background:var(--panel-2);white-space:nowrap}
+.badge b{color:var(--accent-ink);background:var(--accent);font-weight:600;padding:1px 6px;border-radius:999px}
+
+.seg{display:flex;border:1px solid var(--line-strong);border-radius:7px;overflow:hidden;background:var(--panel-2)}
+.seg button{appearance:none;border:0;background:transparent;cursor:pointer;color:var(--text-2);
+  font:inherit;font-size:10.5px;padding:5px 10px;
+  transition:background .22s cubic-bezier(.32,.72,0,1), color .22s cubic-bezier(.32,.72,0,1)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.seg button[aria-pressed="true"]:disabled{background:var(--panel-3);color:var(--text-3);opacity:.5;font-weight:400}
+.seg button:not([aria-pressed="true"]):hover{color:var(--text);background:var(--panel-3)}
+.seg button:disabled{opacity:.32;cursor:not-allowed}
+
+/* ---------- views ---------- */
+main{flex:1;min-height:0;display:flex;flex-direction:column}
+.view{display:none;flex:1;min-height:0}
+.view.is-active{display:flex}
+
+#view-console{gap:0;flex-direction:row;align-items:stretch;min-height:0}
+.rail{background:var(--panel);display:flex;flex-direction:column;overflow-y:auto;flex:0 0 auto}
+.rail-left{width:244px;border-right:1px solid var(--line)}
+.rail-right{width:334px;border-left:1px solid var(--line)}
+.rail::-webkit-scrollbar{width:8px}
+.rail::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:8px}
+
+.block{padding:13px 14px;border-bottom:1px solid var(--line)}
+.block:last-child{border-bottom:0}
+.block h2{font-family:'Geist Mono',ui-monospace,monospace;font-size:9.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--text-3);font-weight:500;margin-bottom:10px;
+  display:flex;align-items:center;justify-content:space-between;gap:8px}
+.block h2 em{font-style:normal;color:var(--accent);letter-spacing:.06em}
+
+.layer{display:flex;align-items:center;gap:9px;width:100%;padding:7px 9px;margin-bottom:4px;
+  border-radius:7px;cursor:pointer;border:1px solid transparent;background:transparent;
+  font:inherit;text-align:left;color:var(--text-2);
+  transition:background .22s cubic-bezier(.32,.72,0,1)}
+.layer:hover{background:var(--panel-3)}
+.layer[aria-pressed="true"]{background:var(--panel-3);border-color:var(--line-strong);color:var(--text)}
+.layer .sw{width:11px;height:11px;border-radius:3px;flex:0 0 11px;border:1px solid var(--line-strong)}
+.layer .sw.lstd{background:linear-gradient(90deg,#2f8fa8,#3a3a3e,#e8a33d)}
+.layer .sw.ndvid{background:linear-gradient(90deg,#c4642a,#4a4a44,#7fc36a)}
+.layer .nm{flex:1;font-size:12px;letter-spacing:-.005em}
+.layer .k{font-family:'Geist Mono',ui-monospace,monospace;font-size:9.5px;color:var(--text-3);letter-spacing:.06em}
+.layer[aria-pressed="true"] .k{color:var(--accent)}
+
+.ctrl{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.ctrl:last-child{margin-bottom:0}
+.ctrl label{font-size:11.5px;color:var(--text-2);flex:0 0 74px}
+input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:3px;border-radius:3px;outline:none;
+  background:linear-gradient(90deg,var(--accent) 0,var(--accent) var(--fill,100%),var(--line-strong) var(--fill,100%),var(--line-strong) 100%)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;
+  background:var(--accent);cursor:pointer;border:2px solid var(--panel)}
+input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--accent);
+  cursor:pointer;border:2px solid var(--panel)}
+.ctrl output{font-family:'Geist Mono',ui-monospace,monospace;font-size:11px;color:var(--text);flex:0 0 38px;text-align:right}
+
+.switchrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0;font-size:11.5px;color:var(--text-2)}
+.toggle{width:32px;height:18px;border-radius:999px;border:1px solid var(--line-strong);
+  background:var(--panel-3);position:relative;cursor:pointer;flex:0 0 32px;
+  transition:background .25s cubic-bezier(.32,.72,0,1)}
+.toggle::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;
+  background:var(--text-3);transition:transform .25s cubic-bezier(.32,.72,0,1), background .25s}
+.toggle[aria-pressed="true"]{background:color-mix(in srgb,var(--accent) 30%,transparent);border-color:var(--accent)}
+.toggle[aria-pressed="true"]::after{transform:translateX(14px);background:var(--accent)}
+
+.btn{appearance:none;font:inherit;font-size:11px;cursor:pointer;border-radius:7px;padding:6px 11px;
+  border:1px solid var(--line-strong);background:var(--panel-3);color:var(--text-2);
+  transition:background .2s cubic-bezier(.32,.72,0,1), color .2s cubic-bezier(.32,.72,0,1)}
+.btn:hover{color:var(--text);border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.btn.primary:hover{filter:brightness(1.08)}
+
+/* ---------- map ---------- */
+.mapwrap{position:relative;flex:1;min-width:0;background:var(--map-out);overflow:hidden}
+.mapframe{position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset 0 0 0 1px var(--line-strong), inset 0 0 30px rgba(0,0,0,.20)}
+#map{display:block;width:100%;height:100%;cursor:grab;touch-action:none}
+#map.dragging{cursor:grabbing}
+#map:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.maplayer{position:absolute;inset:0;pointer-events:none}
+.corner{position:absolute;background:color-mix(in srgb,var(--panel) 88%,transparent);
+  backdrop-filter:blur(14px);border:1px solid var(--line-strong);border-radius:9px;padding:9px 11px}
+
+#legend{left:14px;bottom:14px;min-width:196px}
+#legend .lt{font-family:'Geist Mono',ui-monospace,monospace;font-size:9px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--text-3);margin-bottom:7px}
+#legend .bar{height:9px;border-radius:3px;border:1px solid var(--line);position:relative}
+#legend .bar .zero{position:absolute;top:-2px;bottom:-2px;width:1px;background:var(--text-2)}
+#legend .ticks{display:flex;justify-content:space-between;margin-top:5px}
+#legend .ticks span{font-family:'Geist Mono',ui-monospace,monospace;font-size:9.5px;color:var(--text-3)}
+#legend .unit{font-family:'Geist Mono',ui-monospace,monospace;font-size:9.5px;color:var(--text-2);margin-top:6px;letter-spacing:.04em}
+
+#readout{right:14px;top:14px;min-width:216px;pointer-events:none}
+#readout .rt{font-family:'Geist Mono',ui-monospace,monospace;font-size:9px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--text-3);margin-bottom:7px}
+#readout .rr{display:flex;justify-content:space-between;gap:14px;padding:2px 0}
+#readout .rk{font-size:10.5px;color:var(--text-3)}
+#readout .rv{font-family:'Geist Mono',ui-monospace,monospace;font-size:10.5px;color:var(--text)}
+#readout .rv.hot{color:var(--warn)}
+#readout .rv.cool{color:var(--good)}
+#readout .hint{font-size:10px;color:var(--text-3);margin-top:7px;padding-top:7px;border-top:1px solid var(--line)}
+
+#scalebar{left:14px;top:14px;padding:7px 10px}
+#scalebar .sb{height:6px;border-left:1px solid var(--map-ink);border-right:1px solid var(--map-ink);
+  border-bottom:1px solid var(--map-ink);width:0}
+#scalebar .sl{font-family:'Geist Mono',ui-monospace,monospace;font-size:9.5px;color:var(--text-3);margin-top:4px;letter-spacing:.05em}
+
+#north{right:14px;top:14px;padding:8px 10px;display:grid;place-items:center;gap:3px;margin-right:236px}
+#north svg{width:16px;height:16px;color:var(--text-2)}
+#north span{font-family:'Geist Mono',ui-monospace,monospace;font-size:9px;color:var(--text-3);letter-spacing:.1em}
+
+#mapctl{right:14px;bottom:14px;display:flex;flex-direction:column;gap:4px;padding:7px;pointer-events:auto}
+#mapctl button{width:26px;height:26px;border-radius:6px;border:1px solid var(--line-strong);
+  background:var(--panel-2);color:var(--text-2);cursor:pointer;font-size:14px;line-height:1;
+  display:grid;place-items:center;font-family:'Geist Mono',ui-monospace,monospace;
+  transition:background .2s,color .2s}
+#mapctl button:hover{background:var(--panel-3);color:var(--accent);border-color:var(--accent)}
+#mapctl .zl{font-family:'Geist Mono',ui-monospace,monospace;font-size:9px;color:var(--text-3);
+  text-align:center;letter-spacing:.06em;padding:2px 0}
+
+#shortcuts{right:14px;bottom:150px;display:none;max-width:250px;pointer-events:auto}
+#shortcuts.on{display:block}
+#shortcuts .kt{font-family:'Geist Mono',ui-monospace,monospace;font-size:9px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--text-3);margin-bottom:8px}
+#shortcuts .kr{display:flex;justify-content:space-between;gap:12px;font-size:11px;color:var(--text-2);padding:2px 0}
+kbd{font-family:'Geist Mono',ui-monospace,monospace;font-size:10px;border:1px solid var(--line);
+  border-radius:4px;padding:1px 5px;background:var(--panel-3);color:var(--text)}
+
+#selchip{left:50%;transform:translateX(-50%);top:14px;display:none;align-items:center;gap:10px;
+  padding:7px 9px 7px 13px;pointer-events:auto}
+#selchip.on{display:flex}
+#selchip .sn{font-size:11.5px}
+#selchip .sv{font-family:'Geist Mono',ui-monospace,monospace;font-size:10.5px;color:var(--accent)}
+#selchip button{appearance:none;border:1px solid var(--line-strong);background:var(--panel-2);
+  color:var(--text-2);border-radius:6px;width:20px;height:20px;cursor:pointer;font-size:11px;line-height:1}
+#selchip button:hover{color:var(--warn);border-color:var(--warn)}
+
+#mapstatus{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  font-family:'Geist Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--text-3);background:var(--panel);border:1px solid var(--line-strong);
+  padding:10px 16px;border-radius:8px;display:none}
+#mapstatus.on{display:block}
+
+/* ---------- stats ---------- */
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.stat{background:var(--panel-2);padding:9px 10px}
+.stat .sk{font-size:10px;color:var(--text-3);margin-bottom:3px}
+.stat .sv{font-family:'Geist Mono',ui-monospace,monospace;font-size:17px;font-weight:500;letter-spacing:-.02em}
+.stat .sv small{font-size:10px;color:var(--text-3);font-weight:400;margin-left:2px}
+.stat .sv.a{color:var(--accent)}
+
+.chartbox{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel-2);position:relative}
+.chartbox canvas{display:block;width:100%}
+.cap{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 10px;
+  border-top:1px solid var(--line);font-size:10.5px;color:var(--text-3)}
+.cap .mono{color:var(--text-2);font-size:10px}
+.charttip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line-strong);
+  border-radius:7px;padding:6px 9px;font-family:'Geist Mono',ui-monospace,monospace;font-size:10px;
+  color:var(--text);white-space:nowrap;display:none;z-index:5;box-shadow:0 6px 22px rgba(0,0,0,.35)}
+.charttip.on{display:block}
+.charttip b{color:var(--accent);font-weight:600}
+
+.rankrow{display:flex;align-items:center;gap:9px;padding:5px 6px;font-size:11.5px;width:100%;
+  background:none;border:0;font-family:inherit;cursor:pointer;text-align:left;color:inherit;border-radius:5px}
+.rankrow:hover{background:var(--panel-3)}
+.rankrow[aria-pressed="true"]{background:var(--panel-3)}
+.rankrow .bar{flex:1;height:4px;border-radius:2px;background:var(--panel-3);overflow:hidden}
+.rankrow .bar i{display:block;height:100%;border-radius:2px;background:var(--warn)}
+.rankrow .bar i.cool{background:var(--good)}
+.rankrow .nm{flex:0 0 108px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rankrow .v{font-family:'Geist Mono',ui-monospace,monospace;font-size:10.5px;flex:0 0 46px;text-align:right}
+
+#selcard .empty{font-size:11.5px;color:var(--text-3);line-height:1.6}
+#selcard .kv2{display:flex;justify-content:space-between;gap:10px;padding:4px 0;font-size:11.5px;
+  border-bottom:1px solid var(--line)}
+#selcard .kv2:last-child{border-bottom:0}
+#selcard .kv2 span:first-child{color:var(--text-3)}
+#selcard .kv2 span:last-child{font-family:'Geist Mono',ui-monospace,monospace;font-size:11px}
+
+/* ---------- data views ---------- */
+.page{flex:1;overflow-y:auto;padding:26px 30px 60px}
+.pageinner{max-width:1120px;margin:0 auto}
+.pagehead{border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:22px}
+.eyebrow{display:inline-block;font-family:'Geist Mono',ui-monospace,monospace;font-size:9.5px;
+  letter-spacing:.17em;text-transform:uppercase;color:var(--text-3);border:1px solid var(--line-strong);
+  padding:3px 9px;border-radius:999px;margin-bottom:11px}
+.pagehead h2{font-size:25px;font-weight:600;letter-spacing:-.028em;line-height:1.15;max-width:22ch}
+.pagehead p{color:var(--text-2);margin-top:9px;max-width:62ch;font-size:12.5px}
+
+.toolrow{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+input[type=search]{font:inherit;font-size:12px;padding:7px 11px;border-radius:7px;
+  border:1px solid var(--line-strong);background:var(--panel-2);color:var(--text);min-width:230px}
+input[type=search]::placeholder{color:var(--text-3)}
+
+table{width:100%;border-collapse:collapse;font-size:11.5px}
+thead th{text-align:left;font-family:'Geist Mono',ui-monospace,monospace;font-size:9.5px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);font-weight:500;
+  padding:0 12px 9px 0;border-bottom:1px solid var(--line-strong);white-space:nowrap}
+thead th button{appearance:none;background:none;border:0;font:inherit;color:inherit;cursor:pointer;
+  letter-spacing:inherit;text-transform:inherit;padding:0;display:inline-flex;gap:5px;align-items:center}
+thead th button:hover{color:var(--accent)}
+thead th .ar{color:var(--accent);font-size:9px}
+tbody td{padding:8px 12px 8px 0;border-bottom:1px solid var(--line);color:var(--text-2)}
+tbody tr{cursor:pointer}
+tbody tr:hover td{background:var(--panel-2);color:var(--text)}
+tbody tr[aria-selected="true"] td{background:color-mix(in srgb,var(--accent) 12%,var(--panel-2));color:var(--text)}
+tbody tr[aria-selected="true"] td:first-child{box-shadow:inset 2px 0 0 var(--accent);font-weight:600}
+tbody td.n{font-family:'Geist Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;color:var(--text)}
+tbody td.bn{color:var(--text);font-weight:500}
+td .flag{display:inline-block;font-family:'Geist Mono',ui-monospace,monospace;font-size:9px;
+  letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:999px;cursor:help}
+.flag.ok{background:color-mix(in srgb,var(--good) 22%,transparent);color:var(--good)}
+.flag.thin{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.noresults{padding:26px 0;color:var(--text-3);font-size:12px}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));gap:14px;margin-bottom:26px}
+.card{border:1px solid var(--line);border-radius:10px;padding:16px 17px;background:var(--panel-2)}
+.card h3{font-size:12.5px;font-weight:600;letter-spacing:-.01em;margin-bottom:7px}
+.card p{font-size:11.5px;color:var(--text-2);line-height:1.6}
+.card .idx{font-family:'Geist Mono',ui-monospace,monospace;font-size:9.5px;color:var(--accent);letter-spacing:.12em;margin-bottom:9px}
+
+.steps{counter-reset:s;list-style:none}
+.steps li{counter-increment:s;position:relative;padding:0 0 17px 34px;border-left:1px solid var(--line);margin-left:9px}
+.steps li:last-child{border-left-color:transparent;padding-bottom:0}
+.steps li::before{content:counter(s,decimal-leading-zero);position:absolute;left:-13px;top:0;
+  width:26px;height:26px;border-radius:6px;display:grid;place-items:center;background:var(--panel-3);
+  border:1px solid var(--line-strong);font-family:'Geist Mono',ui-monospace,monospace;
+  font-size:9.5px;color:var(--accent)}
+.steps h4{font-size:12.5px;font-weight:600;margin-bottom:3px}
+.steps p{font-size:11.5px;color:var(--text-2);max-width:74ch}
+
+code{font-family:'Geist Mono',ui-monospace,monospace;font-size:11px;background:var(--panel-3);
+  border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--text)}
+.kv{display:grid;grid-template-columns:190px 1fr;gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.kv div{background:var(--panel-2);padding:9px 13px;font-size:11.5px}
+.kv div:nth-child(odd){color:var(--text-3);font-family:'Geist Mono',ui-monospace,monospace;
+  font-size:10.5px;letter-spacing:.02em}
+.kv div:nth-child(even){color:var(--text-2)}
+
+.note{border:1px solid var(--line-strong);border-left:2px solid var(--accent);border-radius:0 8px 8px 0;
+  padding:12px 15px;background:var(--panel-2);font-size:11.5px;color:var(--text-2);max-width:78ch}
+.note b{color:var(--text)}
+
+/* ---------- status bar ---------- */
+.statusbar{flex:0 0 auto;display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+  padding:7px 16px;border-top:1px solid var(--line);background:var(--panel);
+  font-family:'Geist Mono',ui-monospace,monospace;font-size:9.5px;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--text-3)}
+.statusbar b{color:var(--text-2);font-weight:500}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--good);display:inline-block;margin-right:6px;vertical-align:middle}
+
+@media (max-width:1180px){
+  #view-console{flex-direction:column;overflow-y:auto}
+  .rail-left,.rail-right{width:100%;border:0;border-top:1px solid var(--line)}
+  .mapwrap{flex:0 0 auto;height:min(62dvh,520px);border-bottom:1px solid var(--line)}
+  .rail-left{order:2}.mapwrap{order:1}.rail-right{order:3}
+  .brand span{display:none}
+  #north{margin-right:0;top:auto;bottom:76px;right:auto;left:14px}
+  #shortcuts{bottom:210px}
+}
+@media (max-width:760px){
+  .topbar{height:auto;flex-wrap:wrap;padding:9px 12px;gap:10px}
+  nav.tabs{order:3;width:100%;margin-left:0}
+  .page{padding:18px 15px 44px}
+  .kv{grid-template-columns:1fr}
+  .pagehead h2{font-size:21px}
+  .badge{display:none}
+  #readout{min-width:0;font-size:10px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:.001ms !important;animation-duration:.001ms !important}
+}
+</style>
+</head>
+<body>
+
+<a class="sr" href="#map">Skip to map</a>
+
+<header class="topbar">
+  <div class="mark" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z"/><path d="M9 4v13M15 7v13"/>
+    </svg>
+  </div>
+  <div class="brand">
+    <h1>GreenSpace&ndash;LST Console</h1>
+    <span>Quezon City study area &middot; 23 barangays</span>
+  </div>
+
+  <nav class="tabs" role="tablist" aria-label="Views">
+    <button class="tab" role="tab" aria-selected="true" data-view="console">Console</button>
+    <button class="tab" role="tab" aria-selected="false" data-view="barangays">Barangays</button>
+    <button class="tab" role="tab" aria-selected="false" data-view="method">Method</button>
+  </nav>
+
+  <div class="spacer"></div>
+
+  <span class="badge"><b>Mockup</b> placeholder raster &middot; not Landsat-derived</span>
+
+  <div class="seg" role="group" aria-label="Appearance">
+    <button id="th-dark" aria-pressed="true" data-theme-set="dark">Dark</button>
+    <button id="th-light" aria-pressed="false" data-theme-set="light">Light</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ================= CONSOLE ================= -->
+  <section id="view-console" class="view is-active" role="tabpanel" aria-label="Console">
+
+    <aside class="rail rail-left">
+      <div class="block">
+        <h2>Layers <em id="layer-active">NDVI</em></h2>
+        <button class="layer" data-layer="ndvi" aria-pressed="true">
+          <span class="sw" style="background:#6f9e4e"></span>
+          <span class="nm">Vegetation index</span><span class="k">NDVI</span>
+        </button>
+        <button class="layer" data-layer="lst" aria-pressed="false">
+          <span class="sw" style="background:#c25a1e"></span>
+          <span class="nm">Surface temperature</span><span class="k">LST</span>
+        </button>
+        <button class="layer" data-layer="built" aria-pressed="false">
+          <span class="sw" style="background:#8a8a95"></span>
+          <span class="nm">Built-up index</span><span class="k">NDBI</span>
+        </button>
+        <button class="layer" data-layer="dlst" aria-pressed="false">
+          <span class="sw lstd"></span>
+          <span class="nm">Temperature change</span><span class="k">&Delta;LST</span>
+        </button>
+        <button class="layer" data-layer="dndvi" aria-pressed="false">
+          <span class="sw ndvid"></span>
+          <span class="nm">Vegetation change</span><span class="k">&Delta;NDVI</span>
+        </button>
+      </div>
+
+      <div class="block">
+        <h2>Observation epoch</h2>
+        <div class="seg" role="group" aria-label="Epoch" id="epochseg" style="width:100%">
+          <button data-epoch="0" aria-pressed="false" style="flex:1">2015</button>
+          <button data-epoch="1" aria-pressed="false" style="flex:1">2020</button>
+          <button data-epoch="2" aria-pressed="true" style="flex:1">2024</button>
+        </div>
+        <p id="epochnote" style="font-size:10.5px;color:var(--text-3);margin-top:9px;line-height:1.55">
+          Dry-season median composite, Jan&ndash;Apr. QA_PIXEL masked before compositing.
+        </p>
+      </div>
+
+      <div class="block">
+        <h2>Display</h2>
+        <div class="ctrl">
+          <label for="op">Overlay</label>
+          <input id="op" type="range" min="30" max="100" value="100">
+          <output id="op-out">100</output>
+        </div>
+        <div class="switchrow"><span>Barangay boundaries</span>
+          <button class="toggle" id="t-bounds" aria-pressed="true" aria-label="Barangay boundaries"></button></div>
+        <div class="switchrow"><span>Barangay labels</span>
+          <button class="toggle" id="t-labels" aria-pressed="true" aria-label="Barangay labels"></button></div>
+        <div class="switchrow"><span>Roads and waterways</span>
+          <button class="toggle" id="t-roads" aria-pressed="true" aria-label="Roads and waterways"></button></div>
+        <div class="switchrow"><span>Graticule</span>
+          <button class="toggle" id="t-grid" aria-pressed="false" aria-label="Graticule"></button></div>
+      </div>
+
+      <div class="block">
+        <h2>Raster source</h2>
+        <div style="font-size:10.5px;line-height:1.9;color:var(--text-2);font-family:'Geist Mono',ui-monospace,monospace">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text-3)">scene</span><span>116 / 050</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text-3)">sensor</span><span>OLI / TIRS</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text-3)">thermal</span><span>ST_B10 &middot; 100 m</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text-3)">grid</span><span>240 &times; 173</span></div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="mapwrap">
+      <canvas id="map" tabindex="0" role="application"
+        aria-label="Study area map. Use arrow keys to pan, plus and minus to zoom, 0 to reset, Enter to select the barangay at the centre."></canvas>
+      <div class="mapframe" aria-hidden="true"></div>
+
+      <div class="maplayer">
+        <div class="corner" id="scalebar">
+          <div class="sb" id="sb-bar"></div>
+          <div class="sl" id="sb-label">2 km</div>
+        </div>
+
+        <div class="corner" id="north" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round">
+            <path d="M12 2l5 18-5-4-5 4z"/>
+          </svg>
+          <span>N</span>
+        </div>
+
+        <div class="corner" id="readout" aria-live="polite">
+          <div class="rt" id="ro-title">Study area</div>
+          <div class="rr"><span class="rk">Barangay</span><span class="rv" id="ro-brgy">&mdash;</span></div>
+          <div class="rr"><span class="rk">Land use</span><span class="rv" id="ro-cls">&mdash;</span></div>
+          <div class="rr"><span class="rk">NDVI</span><span class="rv" id="ro-ndvi">&mdash;</span></div>
+          <div class="rr"><span class="rk">LST</span><span class="rv" id="ro-lst">&mdash;</span></div>
+          <div class="rr"><span class="rk" id="ro-llk">View centre</span><span class="rv" id="ro-ll">&mdash;</span></div>
+          <div class="hint" id="ro-hint">Click a barangay to select it</div>
+        </div>
+
+        <div class="corner" id="legend">
+          <div class="lt" id="lg-title">NDVI</div>
+          <div class="bar" id="lg-bar"><div class="zero" id="lg-zero" style="display:none"></div></div>
+          <div class="ticks" id="lg-ticks"></div>
+          <div class="unit" id="lg-unit">index</div>
+        </div>
+
+        <div class="corner" id="mapctl">
+          <button id="z-in" aria-label="Zoom in" title="Zoom in (+)">+</button>
+          <button id="z-out" aria-label="Zoom out" title="Zoom out (&minus;)">&minus;</button>
+          <button id="z-fit" aria-label="Reset view" title="Reset view (0)">&#9633;</button>
+          <div class="zl" id="z-level">1.0&times;</div>
+          <button id="z-help" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+        </div>
+
+        <div class="corner" id="shortcuts">
+          <div class="kt">Keyboard</div>
+          <div class="kr"><span>Pan</span><span><kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd></span></div>
+          <div class="kr"><span>Zoom</span><span><kbd>+</kbd><kbd>&minus;</kbd></span></div>
+          <div class="kr"><span>Reset view</span><span><kbd>0</kbd></span></div>
+          <div class="kr"><span>Select centre</span><span><kbd>Enter</kbd></span></div>
+          <div class="kr"><span>Clear selection</span><span><kbd>Esc</kbd></span></div>
+        </div>
+
+        <div class="corner" id="selchip">
+          <span class="sn" id="selchip-n">Selection</span>
+          <span class="sv" id="selchip-v"></span>
+          <button id="selchip-x" aria-label="Clear selection">&times;</button>
+        </div>
+
+        <div id="mapstatus">Rendering boundaries</div>
+      </div>
+    </div>
+
+    <aside class="rail rail-right">
+
+      <div class="block">
+        <h2>NDVI &ndash; LST relationship <em id="st-epoch">2024</em></h2>
+        <div class="statgrid">
+          <div class="stat"><div class="sk">Pearson r</div><div class="sv a" id="s-r">&mdash;</div></div>
+          <div class="stat"><div class="sk">Coefficient of determination</div><div class="sv" id="s-r2">&mdash;</div></div>
+          <div class="stat"><div class="sk">Slope</div><div class="sv" id="s-slope">&mdash;<small>&deg;C/0.1</small></div></div>
+          <div class="stat"><div class="sk">Sampled cells</div><div class="sv" id="s-n">&mdash;</div></div>
+        </div>
+      </div>
+
+      <div class="block">
+        <h2>Scatter &middot; cell level</h2>
+        <div class="chartbox">
+          <canvas id="c-scatter" height="188"></canvas>
+          <div class="charttip" id="tip-scatter"></div>
+          <div class="cap"><span>NDVI against LST, sampled cells</span><span class="mono" id="cap-scatter">n = &mdash;</span></div>
+        </div>
+      </div>
+
+      <div class="block">
+        <h2>Mean LST by land use</h2>
+        <div class="chartbox">
+          <canvas id="c-bar" height="212"></canvas>
+          <div class="charttip" id="tip-bar"></div>
+          <div class="cap"><span>Click a row to isolate it</span><span class="mono">&deg;C</span></div>
+        </div>
+      </div>
+
+      <div class="block">
+        <h2>Epoch trend</h2>
+        <div class="chartbox">
+          <canvas id="c-trend" height="132"></canvas>
+          <div class="charttip" id="tip-trend"></div>
+          <div class="cap"><span>Study-area mean LST</span><span class="mono" id="cap-trend">&deg;C</span></div>
+        </div>
+      </div>
+
+      <div class="block">
+        <h2>Barangay extremes <em id="ex-epoch">2024</em></h2>
+        <div id="rank-hot"></div>
+        <div style="height:9px"></div>
+        <div id="rank-cool"></div>
+      </div>
+
+      <div class="block" id="selcard">
+        <h2>Selection <button class="btn" id="sel-clear" style="display:none;font-size:10px;padding:3px 8px">Clear</button></h2>
+        <div class="empty" id="sel-empty">
+          Nothing selected. Click a barangay on the map, a row in the table, or a land-use
+          bar to isolate it.
+        </div>
+        <div id="sel-body" style="display:none"></div>
+      </div>
+
+    </aside>
+  </section>
+
+  <!-- ================= BARANGAYS ================= -->
+  <section id="view-barangays" class="view" role="tabpanel" aria-label="Barangays">
+    <div class="page"><div class="pageinner">
+      <div class="pagehead">
+        <span class="eyebrow">Zonal statistics &middot; <span id="tb-epoch">2024</span></span>
+        <h2>Per-barangay vegetation and surface temperature</h2>
+        <p>Aggregated from the 240 &times; 173 analysis grid. Landsat thermal data is natively
+        100&nbsp;m and is delivered resampled to a 30&nbsp;m grid, so the real thermal support is
+        one hectare per cell, not one Landsat pixel. Barangays below 60 native thermal pixels
+        are flagged rather than reported as reliable zonal means. Click any row to isolate that
+        barangay on the map.</p>
+      </div>
+
+      <div class="toolrow">
+        <label class="sr" for="tb-search">Filter barangays</label>
+        <input id="tb-search" type="search" placeholder="Filter by barangay or land use&hellip;">
+        <span class="mono" id="tb-count" style="font-size:10.5px;color:var(--text-3)"></span>
+        <div class="spacer"></div>
+        <button class="btn" id="tb-export">Export CSV</button>
+      </div>
+
+      <div class="toolrow" id="tb-selrow" style="display:none">
+        <span class="mono" style="font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--text-3)">Isolated</span>
+        <span id="tb-selname" style="font-size:12.5px;font-weight:500"></span>
+        <span class="mono" id="tb-selval" style="font-size:10.5px;color:var(--accent)"></span>
+        <button class="btn" id="tb-selclear">Clear selection</button>
+      </div>
+
+      <table>
+        <thead><tr>
+          <th><button data-sort="name">Barangay <span class="ar"></span></button></th>
+          <th><button data-sort="cls">Land use <span class="ar"></span></button></th>
+          <th><button data-sort="ndvi">Mean NDVI <span class="ar"></span></button></th>
+          <th><button data-sort="lst">Mean LST <span class="ar"></span></button></th>
+          <th><button data-sort="npx">Thermal px <span class="ar"></span></button></th>
+          <th>Coverage</th>
+        </tr></thead>
+        <tbody id="tb-body"></tbody>
+      </table>
+      <div class="noresults" id="tb-none" style="display:none">No barangay matches that filter.</div>
+    </div></div>
+  </section>
+
+  <!-- ================= METHOD ================= -->
+  <section id="view-method" class="view" role="tabpanel" aria-label="Method">
+    <div class="page"><div class="pageinner">
+      <div class="pagehead">
+        <span class="eyebrow">Pipeline &amp; provenance</span>
+        <h2>How a scene becomes a number on this screen</h2>
+        <p>The console is a presentation layer. Every value it shows is produced offline and
+        served as a static artefact &mdash; no correlation is computed in the browser.</p>
+      </div>
+
+      <ol class="steps" style="margin-bottom:30px">
+        <li><h4>Acquire</h4><p>Landsat Collection 2 Level 2 surface reflectance and surface
+        temperature, restricted to the dry season (January&ndash;April) to reduce cloud
+        contamination. Scenes are pulled through Earth Engine rather than downloaded per-scene
+        from the USGS archive.</p></li>
+        <li><h4>Mask</h4><p>Cloud, cloud shadow, cirrus and dilated cloud are removed with
+        <code>QA_PIXEL</code> before any compositing. Masking after compositing contaminates
+        the median.</p></li>
+        <li><h4>Composite</h4><p>Per-epoch median composite, with a minimum clear-pixel
+        threshold enforced per epoch. Epochs with insufficient clear observations are rejected
+        rather than interpolated.</p></li>
+        <li><h4>Derive</h4><p>NDVI from <code>SR_B5</code> and <code>SR_B4</code>. LST from
+        <code>ST_B10</code> (Kelvin, scale 0.00341802, offset 149), or from an NDVI-threshold
+        emissivity with a statistical mono-window retrieval where the stock product has ASTER
+        GED gaps.</p></li>
+        <li><h4>Analyse</h4><p>Correlation, regression, land-use stratification and spatial
+        clustering, computed offline. Results are exported as static JSON; rasters are exported
+        as pre-rendered XYZ tiles so the console works without a live session.</p></li>
+        <li><h4>Serve</h4><p>Tiles and statistics are read-only. This mockup replaces both with
+        a procedurally generated raster so the interface can be reviewed before any satellite
+        data is processed.</p></li>
+      </ol>
+
+      <div class="cards" style="margin-bottom:26px">
+        <div class="card">
+          <div class="idx">COLLECTIONS</div>
+          <h3>Identifiers to pin</h3>
+          <p><code>LANDSAT/LC08/C02/T1_L2</code><br><code>LANDSAT/LC09/C02/T1_L2</code><br>
+          <code>LANDSAT/LC05/C02/T1_L2</code></p>
+        </div>
+        <div class="card">
+          <div class="idx">SCALE</div>
+          <h3>Resolution honesty</h3>
+          <p>Thermal band 10 is natively 100&nbsp;m. Delivered at 30&nbsp;m. Any per-barangay
+          thermal statistic inherits the 100&nbsp;m support, and small barangays inherit the
+          uncertainty that comes with it.</p>
+        </div>
+        <div class="card">
+          <div class="idx">LIMITS</div>
+          <h3>What this cannot say</h3>
+          <p>LST is a surface radiometric quantity, not air temperature. Comparison against
+          station air temperature is indicative only. NDVI alone explains a moderate share of
+          LST variance; albedo, imperviousness and building density carry the rest.</p>
+        </div>
+        <div class="card">
+          <div class="idx">VALIDATION</div>
+          <h3>Reference points</h3>
+          <p>Direction and rough magnitude are checked against published Quezon City and Metro
+          Manila results: Alcantara et al. (2019), Landicho &amp; Blanco (2019),
+          Almadrones-Reyes &amp; Dagamac (2023).</p>
+        </div>
+      </div>
+
+      <div class="note" style="margin-bottom:22px">
+        <b>This file contains no satellite data.</b> The raster, the correlation, the zonal
+        means and the trend line are generated procedurally from a fixed seed so the interface
+        can be reviewed. The statistics are computed from that generated raster, which makes
+        them internally consistent &mdash; and completely unrelated to Quezon City. Nothing
+        here is a result. Roads, waterways and park outlines are schematic and are not survey
+        geometry.
+      </div>
+
+      <div class="kv">
+        <div>Study area</div><div>Selected barangays, Quezon City, Philippines</div>
+        <div>Extent</div><div>120.99&deg;E &ndash; 121.11&deg;E &middot; 14.60&deg;N &ndash; 14.74&deg;N</div>
+        <div>Analysis grid</div><div>240 &times; 173 cells &middot; ~54 m nominal cell</div>
+        <div>Epochs</div><div>2015 &middot; 2020 &middot; 2024</div>
+        <div>Basemap</div><div>OpenStreetMap &middot; ODbL &middot; attribution required in UI</div>
+        <div>Imagery</div><div>USGS Landsat &middot; public domain</div>
+      </div>
+    </div></div>
+  </section>
+
+</main>
+
+<footer class="statusbar">
+  <span><i class="dot"></i><b>Ready</b></span>
+  <span>Source <b>Mockup raster</b></span>
+  <span>Epoch <b id="sb-epoch">2024</b></span>
+  <span>Layer <b id="sb-layer">NDVI</b></span>
+  <span>Grid <b>240 &times; 173</b></span>
+  <span>Sampled pairs <b id="sb-cells">&mdash;</b></span>
+  <span>Zoom <b id="sb-zoom">1.0&times;</b></span>
+  <span style="margin-left:auto">GreenSpace&ndash;LST &middot; interface sample</span>
+</footer>
+
+<script>
+"use strict";
+
+/* ============================================================
+   1. Deterministic noise
+   ============================================================ */
+function hash2(x, y, s){
+  let h = (Math.imul(x|0, 374761393) + Math.imul(y|0, 668265263) + Math.imul(s|0, 1013904223)) | 0;
+  h = (h ^ (h >>> 13)) | 0;
+  h = Math.imul(h, 1274126177);
+  h = (h ^ (h >>> 16)) >>> 0;
+  return h / 4294967296;
+}
+const smoothstep = t => t*t*(3 - 2*t);
+function vnoise(x, y, s){
+  const xi = Math.floor(x), yi = Math.floor(y);
+  const xf = x - xi, yf = y - yi;
+  const a = hash2(xi, yi, s),   b = hash2(xi+1, yi, s);
+  const c = hash2(xi, yi+1, s), d = hash2(xi+1, yi+1, s);
+  const u = smoothstep(xf), v = smoothstep(yf);
+  return a*(1-u)*(1-v) + b*u*(1-v) + c*(1-u)*v + d*u*v;
+}
+function fbm(x, y, s, oct){
+  oct = oct || 4;
+  let v = 0, amp = 0.5, f = 1, norm = 0;
+  for (let i = 0; i < oct; i++){
+    v += amp * vnoise(x*f, y*f, s + i*97);
+    norm += amp; amp *= 0.5; f *= 2;
+  }
+  return v / norm;
+}
+const clamp = (v,a,b) => v < a ? a : v > b ? b : v;
+const lerp  = (a,b,t) => a + (b-a)*t;
+
+/* ============================================================
+   2. Study area model
+   Logical space 1000 x 720, origin top-left, y increases south.
+   Extent 120.99-121.11 E, 14.60-14.74 N.
+   ============================================================ */
+const SITES = [
+  { n:'Unang Sigaw',     x:470, y:105, r:52, cls:'Residential (high density)', veg:0.20, built:0.78 },
+  { n:'Batasan Hills',   x:700, y:120, r:78, cls:'Residential (high density)', veg:0.26, built:0.72 },
+  { n:'Apolonio Samson', x:440, y:142, r:62, cls:'Residential (high density)', veg:0.24, built:0.74 },
+  { n:'Culiat',          x:545, y:160, r:88, cls:'Residential (low density)',  veg:0.42, built:0.48 },
+  { n:'Payatas',         x:762, y:196, r:86, cls:'Barren / other',             veg:0.11, built:0.55 },
+  { n:'Commonwealth',    x:622, y:206, r:74, cls:'Commercial',                 veg:0.22, built:0.86 },
+  { n:'Bagong Silangan', x:884, y:262, r:72, cls:'Residential (high density)', veg:0.30, built:0.68 },
+  { n:'Pasong Tamo',     x:300, y:202, r:70, cls:'Industrial',                 veg:0.13, built:0.88 },
+  { n:'Sauyo',           x:252, y:276, r:72, cls:'Residential (high density)', veg:0.22, built:0.76 },
+  { n:'Talipapa',        x:334, y:296, r:64, cls:'Residential (high density)', veg:0.19, built:0.80 },
+  { n:'San Bartolome',   x:176, y:334, r:76, cls:'Industrial',                 veg:0.12, built:0.90 },
+  { n:'Bahay Toro',      x:432, y:334, r:66, cls:'Residential (high density)', veg:0.20, built:0.79 },
+  { n:'Bagong Pag-asa',  x:330, y:404, r:68, cls:'Residential (high density)', veg:0.23, built:0.75 },
+  { n:'Damar Village',   x:196, y:436, r:62, cls:'Residential (low density)',  veg:0.40, built:0.50 },
+  { n:'Project 6',       x:430, y:432, r:60, cls:'Residential (high density)', veg:0.21, built:0.78 },
+  { n:'Blue Ridge',      x:684, y:420, r:66, cls:'Residential (low density)',  veg:0.44, built:0.46 },
+  { n:'Kamuning',        x:470, y:540, r:58, cls:'Commercial',                 veg:0.18, built:0.88 },
+  { n:'Pinyahan',        x:542, y:520, r:62, cls:'Residential (high density)', veg:0.24, built:0.74 },
+  { n:'Ugong Norte',     x:690, y:560, r:72, cls:'Residential (low density)',  veg:0.38, built:0.52 },
+  { n:'Libis',           x:766, y:502, r:60, cls:'Commercial',                 veg:0.20, built:0.87 },
+  { n:'UP Campus',       x:380, y:622, r:82, cls:'Institutional',              veg:0.66, built:0.20 },
+  { n:'Kalusugan',       x:520, y:604, r:30, cls:'Residential (high density)', veg:0.23, built:0.76 },
+  { n:'Loyola Heights',  x:492, y:672, r:62, cls:'Residential (low density)',  veg:0.46, built:0.44 }
+];
+
+/* Differential change trajectory. The study asks whether vegetation loss
+   tracks temperature rise, so each barangay gets its own rate rather than one
+   global delta: development pressure drives vegetation loss, and a
+   deterministic per-site jitter lets a few barangays gain vegetation. */
+SITES.forEach((S, i) => {
+  const j = ((i * 37) % 7 - 3) / 100;
+  S.dveg = -(0.004 + 0.038*S.built) + j*1.6;
+  S.dblt =  (0.003 + 0.030*S.built) + j*0.9;
+});
+
+const BLOBS = [
+  { x:352, y:86,  r:126, cls:'Parks & open space', veg:0.84, built:0.04 },
+  { x:296, y:114, r:60,  cls:'Water',              veg:0.06, built:0.02 },
+  { x:520, y:474, r:48,  cls:'Parks & open space', veg:0.78, built:0.06 },
+  { x:464, y:446, r:42,  cls:'Parks & open space', veg:0.72, built:0.08 }
+];
+
+const LANDUSE = ['Water','Parks & open space','Institutional','Residential (low density)',
+                 'Residential (high density)','Commercial','Industrial','Barren / other'];
+/* Chart gutter labels: the full class names do not fit the bar-chart label
+   column, and a clipped label reads as a broken axis. */
+const LANDUSE_SHORT = { 'Residential (low density)':'Residential (low)',
+                        'Residential (high density)':'Residential (high)' };
+
+/* Schematic context geometry. Not survey data. */
+const ROADS = [
+  { n:'Marikina River', t:'river', p:[[905,20],[880,120],[900,220],[860,320],[845,420],[880,520],[910,620],[890,720]] },
+  { n:'Tullahan River', t:'river', p:[[330,-10],[315,60],[280,140],[300,220],[250,300],[210,380],[175,470],[140,560],[120,640],[110,720]] },
+  { n:'EDSA',             t:'major', p:[[300,720],[318,640],[330,560],[352,480],[340,400],[330,320],[345,240],[360,160],[350,80],[340,0]] },
+  { n:'Commonwealth Ave', t:'major', p:[[400,340],[470,300],[540,262],[620,222],[700,180],[790,140],[860,110]] },
+  { n:'Quezon Ave',       t:'major', p:[[330,470],[400,468],[470,470],[520,472]] },
+  { n:'Aurora Blvd',      t:'major', p:[[380,640],[470,632],[560,630],[650,636],[740,644],[830,652]] },
+  { n:'C-5 Katipunan',    t:'major', p:[[610,720],[640,640],[665,560],[690,480],[720,400],[745,320],[770,240],[790,170]] },
+  { n:'Mindanao Ave',     t:'major', p:[[330,330],[340,260],[352,190],[360,120],[365,60]] },
+  { n:'Congressional Ave',t:'major', p:[[380,250],[440,232],[500,220],[560,210],[620,205],[690,215],[750,230]] },
+  { n:'Ortigas Ave',      t:'major', p:[[690,520],[760,516],[830,520],[900,528]] },
+  { n:'Espana Blvd',      t:'major', p:[[240,570],[300,560],[360,552],[420,548],[470,545]] },
+  { n:'Quirino Hwy',      t:'major', p:[[210,720],[240,660],[268,600],[292,540],[310,480],[322,420]] },
+  { n:'Balara',           t:'minor', p:[[520,600],[560,560],[600,530],[640,505]] },
+  { n:'Del Monte Ave',    t:'minor', p:[[360,500],[420,505],[470,512],[520,520]] },
+  { n:'Banawe St',        t:'minor', p:[[430,430],[440,490],[450,550],[458,610],[465,665]] },
+  { n:'Roosevelt Ave',    t:'minor', p:[[380,390],[430,392],[480,396],[520,400]] },
+  { n:'Batasan Rd',       t:'minor', p:[[600,140],[650,160],[700,190],[740,225]] },
+  { n:'Payatas Rd',       t:'minor', p:[[700,230],[740,250],[780,275],[820,300]] },
+  { n:'Regalado Ave',     t:'minor', p:[[520,220],[560,280],[600,340],[640,395]] },
+  { n:'Elliptical Rd',    t:'ring',  c:[520,474], r:46 }
+];
+
+const GW = 240, GH = 173;       /* analysis grid */
+const LW = 1000, LH = 720;      /* logical map space */
+const MW = 1400, MH = 1008;     /* boundary mask resolution */
+const EXT = { w:120.99, e:121.11, n:14.74, s:14.60 };
+const CELL_M = 53.8;
+const COVER_THRESHOLD = 60;     /* native 100 m thermal pixels */
+const nativePixels = cells => Math.round(cells * Math.pow(CELL_M/100, 2));
+
+const EPOCHS = [
+  { year:2015, warm:0.00 },
+  { year:2020, warm:0.95 },
+  { year:2024, warm:1.85 }
+];
+
+/* ============================================================
+   3. Field generation
+   ============================================================ */
+const state = {
+  epoch: 2, layer: 'ndvi', overlay: 1.0,
+  bounds: true, labels: true, roads: true, grid: false,
+  field: null, change: null,
+  cw: 0, ch: 0, dpr: 1,
+  view: { cx: LW/2, cy: LH/2, zoom: 1 },
+  sel: null,
+  hover: null, hoverCell: null, hoverScatter: undefined,
+  sortKey: 'lst', sortDir: -1, query: '',
+  mask: null, maskReady: false,
+  selMask: null, selMaskKey: ''
+};
+
+function buildField(ep){
+  const E = EPOCHS[ep];
+  /* One seed for every epoch. Terrain and site character do not change between
+     observations, so a decorrelated noise field per epoch would fabricate
+     pixel-level change that no real delta map has. */
+  const seed = 1301;
+  const ndvi  = new Float32Array(GW*GH);
+  const lst   = new Float32Array(GW*GH);
+  const built = new Float32Array(GW*GH);
+  const site  = new Int16Array(GW*GH);
+  const klass = new Uint8Array(GW*GH);
+  const waterIdx = LANDUSE.indexOf('Water');
+
+  for (let gy = 0; gy < GH; gy++){
+    const ly = (gy + 0.5) / GH * LH;
+    for (let gx = 0; gx < GW; gx++){
+      const lx = (gx + 0.5) / GW * LW;
+      const i  = gy*GW + gx;
+
+      let best = 0, bestd = Infinity;
+      for (let s = 0; s < SITES.length; s++){
+        const S = SITES[s];
+        const dx = lx - S.x, dy = ly - S.y;
+        const d = (dx*dx + dy*dy) / (S.r*S.r);
+        if (d < bestd){ bestd = d; best = s; }
+      }
+      const S = SITES[best];
+      site[i] = best;
+
+      let veg = S.veg + S.dveg * ep;
+      let blt = S.built + S.dblt * ep;
+      let cls = LANDUSE.indexOf(S.cls);
+
+      for (let b = 0; b < BLOBS.length; b++){
+        const B = BLOBS[b];
+        const dx = lx - B.x, dy = ly - B.y;
+        const d  = Math.sqrt(dx*dx + dy*dy);
+        if (d < B.r){
+          const w = smoothstep(1 - d/B.r);
+          veg = lerp(veg, B.veg + S.dveg * ep * 0.3, w);
+          blt = lerp(blt, B.built, w);
+          if (w > 0.45) cls = LANDUSE.indexOf(B.cls);
+        }
+      }
+
+      const n1 = fbm(lx*0.021, ly*0.021, seed + 11, 4);
+      const n2 = fbm(lx*0.045, ly*0.045, seed + 71, 3);
+      const n3 = fbm(lx*0.058, ly*0.058, seed + 37, 3);
+
+      const v = clamp(veg + (n1 - 0.5)*0.20, 0.02, 0.90);
+      const b = clamp(blt + (n2 - 0.5)*1.40, 0, 1);
+      ndvi[i]  = v;
+      built[i] = b;
+
+      /* LST: warm where vegetation is low and imperviousness high.
+         The impervious term carries its own large independent texture and
+         the radiometric residual is wide, so NDVI-LST lands at r ~ -0.71
+         rather than a synthetic -0.95. Water is low-NDVI but not hot. */
+      const vn = clamp((v - 0.06) / 0.80, 0, 1);
+      let t = 26.1 + 5.8*Math.pow(1 - vn, 1.12) + 2.4*b
+              + (n3 - 0.5)*11.0 + E.warm;
+      if (cls === waterIdx) t -= 4.5;
+      lst[i] = t;
+      klass[i] = cls < 0 ? 0 : cls;
+    }
+  }
+  return { ndvi, lst, built, site, klass };
+}
+
+/* Change between the first and last epoch. */
+function buildChange(){
+  const a = buildField(0), b = buildField(EPOCHS.length - 1);
+  const dLst = new Float32Array(GW*GH), dNdvi = new Float32Array(GW*GH);
+  for (let i = 0; i < dLst.length; i++){
+    dLst[i]  = b.lst[i]  - a.lst[i];
+    dNdvi[i] = b.ndvi[i] - a.ndvi[i];
+  }
+  return { dLst, dNdvi };
+}
+
+/* ============================================================
+   4. Colormaps
+   ============================================================ */
+function ramp(stops){
+  return function(t){
+    t = clamp(t, 0, 1);
+    for (let i = 0; i < stops.length - 1; i++){
+      const a = stops[i], b = stops[i+1];
+      if (t <= b.p){
+        const k = (t - a.p) / (b.p - a.p || 1);
+        return [ Math.round(lerp(a.c[0],b.c[0],k)),
+                 Math.round(lerp(a.c[1],b.c[1],k)),
+                 Math.round(lerp(a.c[2],b.c[2],k)) ];
+      }
+    }
+    return stops[stops.length-1].c;
+  };
+}
+const RAMPS = {
+  ndvi: ramp([
+    {p:0.00,c:[ 62, 58, 46]},{p:0.28,c:[ 88, 90, 54]},{p:0.52,c:[111,158, 78]},
+    {p:0.76,c:[148,201,110]},{p:1.00,c:[204,236,168]}
+  ]),
+  lst: ramp([
+    {p:0.00,c:[ 15, 20, 30]},{p:0.22,c:[ 58, 34, 44]},{p:0.44,c:[124, 51, 30]},
+    {p:0.66,c:[196, 90, 30]},{p:0.84,c:[237,165, 63]},{p:1.00,c:[250,234,190]}
+  ]),
+  built: ramp([
+    {p:0.00,c:[ 24, 24, 27]},{p:0.40,c:[ 74, 74, 82]},{p:0.72,c:[154,154,164]},
+    {p:1.00,c:[228,228,236]}
+  ]),
+  dlst: ramp([
+    {p:0.00,c:[ 26, 74, 92]},{p:0.30,c:[ 44,104,118]},{p:0.47,c:[ 58, 74, 78]},
+    {p:0.50,c:[ 46, 46, 50]},{p:0.53,c:[ 74, 60, 48]},{p:0.70,c:[160, 84, 34]},
+    {p:1.00,c:[244,222,168]}
+  ]),
+  dndvi: ramp([
+    {p:0.00,c:[166, 70, 32]},{p:0.35,c:[110, 62, 40]},{p:0.47,c:[ 62, 58, 52]},
+    {p:0.50,c:[ 48, 48, 48]},{p:0.53,c:[ 66, 82, 54]},{p:0.70,c:[ 96,150, 74]},
+    {p:1.00,c:[176,220,132]}
+  ])
+};
+const SCALES = {
+  ndvi:  { min:0.00, max:0.90, title:'NDVI', unit:'index', ticks:['0.00','0.30','0.60','0.90'] },
+  lst:   { min:24.0, max:42.0, title:'LST',  unit:'degrees Celsius', ticks:['24','30','36','42'] },
+  built: { min:0.00, max:1.00, title:'NDBI', unit:'index', ticks:['0.00','0.33','0.66','1.00'] },
+  dlst:  { min:-1.0, max:3.0,  title:'\u0394LST 2015\u20132024', unit:'degrees Celsius', ticks:['-1.0','0.3','1.7','3.0'] },
+  dndvi: { min:-0.12, max:0.04, title:'\u0394NDVI 2015\u20132024', unit:'index', ticks:['-0.12','-0.07','-0.01','0.04'] }
+};
+const isChange = l => l === 'dlst' || l === 'dndvi';
+
+/* Change scales are fitted to the generated data so the legend is honest. */
+function fitChangeScales(){
+  const fit = (arr, key) => {
+    let lo = Infinity, hi = -Infinity;
+    for (let i = 0; i < arr.length; i++){ if (arr[i] < lo) lo = arr[i]; if (arr[i] > hi) hi = arr[i]; }
+    const S = SCALES[key];
+    /* Both change ramps put their neutral at the midpoint of the ramp, so the
+       domain has to be symmetric about zero or the colour break lands on the
+       wrong value and a cooling area reads as neutral. */
+    const m = Math.max(Math.abs(lo), Math.abs(hi)) * 1.04;
+    const step = m < 0.2 ? 1000 : m < 2 ? 100 : 10;
+    S.min = -Math.ceil(m*step)/step;
+    S.max =  Math.ceil(m*step)/step;
+    if (S.max - S.min < 1e-6) S.max = S.min + 1;
+    const dec = (S.max - S.min) < 0.4 ? 2 : 1;
+    S.ticks = [0,1,2,3].map(i => (S.min + (S.max - S.min)*i/3).toFixed(dec));
+    S.zeroAt = 0.5;
+  };
+  fit(state.change.dLst, 'dlst');
+  fit(state.change.dNdvi, 'dndvi');
+}
+
+/* A light UI next to a dark data canvas is a hard tonal jump. Lift the raster
+   and the legend together in light theme so the two can never disagree, and
+   so low values stop reading as a black hole against white chrome. Charts keep
+   the unlifted ramps: they sit on panels and carry their own scale. */
+function themeLift(){
+  return document.documentElement.getAttribute('data-theme') === 'light' ? 0.14 : 0;
+}
+function liftRGB(c, amt){
+  return amt ? [ Math.round(lerp(c[0],255,amt)), Math.round(lerp(c[1],255,amt)), Math.round(lerp(c[2],255,amt)) ] : c;
+}
+
+function cssRamp(which){
+  const amt = themeLift();
+  const parts = [];
+  for (let i = 0; i <= 10; i++){
+    const c = liftRGB(RAMPS[which](i/10), amt);
+    parts.push(`rgb(${c[0]},${c[1]},${c[2]}) ${(i*10).toFixed(0)}%`);
+  }
+  return `linear-gradient(90deg, ${parts.join(',')})`;
+}
+
+/* ============================================================
+   5. Canvas + view transform
+   ============================================================ */
+const mapEl = document.getElementById('map');
+const ctx = mapEl.getContext('2d');
+
+const off = document.createElement('canvas');   off.width = GW; off.height = GH;
+const offCtx = off.getContext('2d');
+const offImg = offCtx.createImageData(GW, GH);
+const tint = document.createElement('canvas');
+const tintCtx = tint.getContext('2d');
+const selCanvas = document.createElement('canvas');
+const selCtx = selCanvas.getContext('2d');
+
+function themeVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function fitScale(){ return Math.min(state.cw / LW, state.ch / LH); }
+function k(){ return fitScale() * state.view.zoom; }
+function toScreen(lx, ly){
+  const K = k();
+  return [ (lx - state.view.cx)*K + state.cw/2, (ly - state.view.cy)*K + state.ch/2 ];
+}
+function toLogical(sx, sy){
+  const K = k();
+  return [ (sx - state.cw/2)/K + state.view.cx, (sy - state.ch/2)/K + state.view.cy ];
+}
+function clampView(){
+  const K = k();
+  const halfW = (state.cw/2)/K, halfH = (state.ch/2)/K;
+  state.view.cx = (halfW*2 >= LW) ? LW/2 : clamp(state.view.cx, halfW, LW - halfW);
+  state.view.cy = (halfH*2 >= LH) ? LH/2 : clamp(state.view.cy, halfH, LH - halfH);
+  /* The readout shows view-centre coordinates when nothing is under the
+     cursor, so panning and zooming must refresh it or it goes stale. */
+  if (state.field && !state.sel && !state.hoverCell) setReadout(null);
+}
+function setZoom(z, sx, sy){
+  const px = sx === undefined ? state.cw/2 : sx;
+  const py = sy === undefined ? state.ch/2 : sy;
+  const [lx, ly] = toLogical(px, py);
+  state.view.zoom = clamp(z, 1, 4);
+  const K = k();
+  state.view.cx = lx - (px - state.cw/2)/K;
+  state.view.cy = ly - (py - state.ch/2)/K;
+  clampView();
+  syncZoomLabel();
+  draw();
+}
+function syncZoomLabel(){
+  const t = state.view.zoom.toFixed(1) + '\u00D7';
+  document.getElementById('z-level').textContent = t;
+  document.getElementById('sb-zoom').textContent = t;
+  updateScaleBar();
+}
+
+const WATER_RGB = [46, 62, 74];
+function rasterToOffscreen(which){
+  const F = state.field, C = state.change;
+  const S = SCALES[which], R = RAMPS[which];
+  const arr = which === 'ndvi'  ? F.ndvi
+            : which === 'lst'   ? F.lst
+            : which === 'built' ? F.built
+            : which === 'dlst'  ? C.dLst
+            : C.dNdvi;
+  /* Water carries no vegetation or built-up signal, so pushing it through the
+     index ramp renders a lake as a hole in the map. Mask it to a flat neutral
+     instead. LST keeps water: a lake surface has a real radiometric
+     temperature and belongs on the thermal ramp. */
+  const maskWater = which !== 'lst';
+  const wIdx = LANDUSE.indexOf('Water');
+  const span = S.max - S.min;
+  const liftAmt = themeLift();
+  const water = liftRGB(WATER_RGB, liftAmt);
+  const d = offImg.data;
+  for (let i = 0, j = 0; i < arr.length; i++, j += 4){
+    if (maskWater && F.klass[i] === wIdx){
+      d[j] = water[0]; d[j+1] = water[1]; d[j+2] = water[2]; d[j+3] = 255;
+      continue;
+    }
+    const c = liftRGB(R((arr[i] - S.min) / span), liftAmt);
+    d[j] = c[0]; d[j+1] = c[1]; d[j+2] = c[2]; d[j+3] = 255;
+  }
+  offCtx.putImageData(offImg, 0, 0);
+}
+
+/* Boundary mask: built once at fixed resolution, off the critical path. */
+function buildMask(){
+  const c = document.createElement('canvas');
+  c.width = MW; c.height = MH;
+  const cx = c.getContext('2d');
+  const img = cx.createImageData(MW, MH);
+  const d = img.data;
+  const sites = new Uint8Array(MW*MH);
+
+  for (let y = 0; y < MH; y++){
+    const ly = (y + 0.5) / MH * LH;
+    for (let x = 0; x < MW; x++){
+      const lx = (x + 0.5) / MW * LW;
+      let best = 0, bestd = Infinity;
+      for (let s = 0; s < SITES.length; s++){
+        const S = SITES[s];
+        const dx = lx - S.x, dy = ly - S.y;
+        const v = (dx*dx + dy*dy) / (S.r*S.r);
+        if (v < bestd){ bestd = v; best = s; }
+      }
+      sites[y*MW + x] = best;
+    }
+  }
+  for (let y = 0; y < MH; y++){
+    for (let x = 0; x < MW; x++){
+      const i = y*MW + x, here = sites[i];
+      const right = x + 1 < MW ? sites[i+1] : here;
+      const down  = y + 1 < MH ? sites[i+MW] : here;
+      if (here !== right || here !== down){
+        const j = i*4;
+        d[j] = 255; d[j+1] = 255; d[j+2] = 255; d[j+3] = 255;
+      }
+    }
+  }
+  cx.putImageData(img, 0, 0);
+  state.mask = c;
+  state.maskReady = true;
+  document.getElementById('mapstatus').classList.remove('on');
+  draw();
+}
+
+/* Selection mask at grid resolution. */
+function buildSelMask(){
+  if (!state.sel){ state.selMask = null; state.selMaskKey = ''; return; }
+  const key = state.sel.type + ':' + state.sel.id + ':' + state.epoch;
+  if (key === state.selMaskKey && state.selMask) return;
+  const c = document.createElement('canvas');
+  c.width = GW; c.height = GH;
+  const cx = c.getContext('2d');
+  const img = cx.createImageData(GW, GH);
+  const d = img.data;
+  const F = state.field;
+  for (let i = 0; i < GW*GH; i++){
+    const hit = state.sel.type === 'site' ? F.site[i] === state.sel.id
+                                          : F.klass[i] === state.sel.id;
+    if (hit){ const j = i*4; d[j] = 255; d[j+1] = 255; d[j+2] = 255; d[j+3] = 255; }
+  }
+  cx.putImageData(img, 0, 0);
+  state.selMask = c; state.selMaskKey = key;
+}
+
+/* ============================================================
+   6. Draw
+   ============================================================ */
+function draw(){
+  if (!state.field || state.cw < 2 || state.ch < 2) return;
+  const cw = state.cw, ch = state.ch, K = k();
+  ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+  ctx.clearRect(0, 0, cw, ch);
+
+  const [x0, y0] = toScreen(0, 0);
+  const w = LW*K, h = LH*K;
+
+  rasterToOffscreen(state.layer);
+  ctx.globalAlpha = state.overlay;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(off, x0, y0, w, h);
+  ctx.globalAlpha = 1;
+
+  /* selection: dim everything, then re-draw the selected cells on top */
+  if (state.sel){
+    buildSelMask();
+    ctx.fillStyle = themeVar('--map-dim');
+    ctx.fillRect(0, 0, cw, ch);
+    if (state.selMask){
+      const dw = Math.floor(cw*state.dpr), dh = Math.floor(ch*state.dpr);
+      if (selCanvas.width !== dw || selCanvas.height !== dh){ selCanvas.width = dw; selCanvas.height = dh; }
+      selCtx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+      selCtx.globalCompositeOperation = 'source-over';
+      selCtx.clearRect(0, 0, cw, ch);
+      selCtx.imageSmoothingEnabled = true;
+      selCtx.drawImage(off, x0, y0, w, h);
+      selCtx.globalCompositeOperation = 'destination-in';
+      selCtx.drawImage(state.selMask, x0, y0, w, h);
+      selCtx.globalCompositeOperation = 'source-over';
+      ctx.drawImage(selCanvas, 0, 0, cw, ch);
+    }
+  }
+
+  /* schematic context: waterways, then roads with a casing */
+  if (state.roads){
+    ctx.save();
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    const path = r => {
+      ctx.beginPath();
+      if (r.t === 'ring'){ const c = toScreen(r.c[0], r.c[1]); ctx.arc(c[0], c[1], r.r*K, 0, Math.PI*2); return; }
+      const p0 = toScreen(r.p[0][0], r.p[0][1]);
+      ctx.moveTo(p0[0], p0[1]);
+      for (let i = 1; i < r.p.length; i++){ const p = toScreen(r.p[i][0], r.p[i][1]); ctx.lineTo(p[0], p[1]); }
+    };
+    for (const r of ROADS){
+      if (r.t !== 'river') continue;
+      path(r);
+      ctx.strokeStyle = themeVar('--map-river');
+      ctx.lineWidth = Math.max(1.6, 3.0*K);
+      ctx.stroke();
+    }
+    for (const r of ROADS){
+      if (r.t === 'river') continue;
+      path(r);
+      ctx.strokeStyle = themeVar('--map-road-casing');
+      ctx.lineWidth = Math.max(1.2, (r.t === 'major' ? 2.6 : 1.7) * K);
+      ctx.stroke();
+      ctx.strokeStyle = themeVar('--map-road');
+      ctx.lineWidth = Math.max(0.6, (r.t === 'major' ? 1.4 : 0.8) * K);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /* barangay boundaries */
+  if (state.bounds && state.maskReady){
+    const dw = Math.floor(cw*state.dpr), dh = Math.floor(ch*state.dpr);
+    if (tint.width !== dw || tint.height !== dh){ tint.width = dw; tint.height = dh; }
+    tintCtx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+    tintCtx.globalCompositeOperation = 'source-over';
+    tintCtx.clearRect(0, 0, cw, ch);
+    tintCtx.drawImage(state.mask, x0, y0, w, h);
+    tintCtx.globalCompositeOperation = 'source-in';
+    tintCtx.fillStyle = themeVar('--map-edge');
+    tintCtx.fillRect(0, 0, cw, ch);
+    tintCtx.globalCompositeOperation = 'source-over';
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.drawImage(tint, 0, 0, cw, ch);
+    ctx.restore();
+  }
+
+  /* study area extent */
+  ctx.save();
+  ctx.strokeStyle = themeVar('--map-extent');
+  ctx.lineWidth = 1;
+  ctx.setLineDash([5, 4]);
+  ctx.strokeRect(x0 + 0.5, y0 + 0.5, w - 1, h - 1);
+  ctx.restore();
+
+  /* graticule */
+  if (state.grid){
+    ctx.save();
+    ctx.strokeStyle = themeVar('--map-grid');
+    ctx.lineWidth = 1;
+    ctx.font = '9px "Geist Mono", monospace';
+    ctx.fillStyle = themeVar('--map-ink');
+    for (let i = 1; i < 6; i++){
+      const g = toScreen(i/6*LW, i/6*LH);
+      ctx.beginPath(); ctx.moveTo(g[0] + .5, y0); ctx.lineTo(g[0] + .5, y0 + h); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x0, g[1] + .5); ctx.lineTo(x0 + w, g[1] + .5); ctx.stroke();
+      ctx.textAlign = 'center';
+      ctx.fillText((EXT.w + i/6*(EXT.e-EXT.w)).toFixed(3) + '\u00B0E', g[0], y0 + h - 5);
+      ctx.textAlign = 'left';
+      ctx.fillText((EXT.n - i/6*(EXT.n-EXT.s)).toFixed(3) + '\u00B0N', x0 + 5, g[1] - 4);
+    }
+    ctx.restore();
+  }
+
+  /* labels: largest first, greedy collision rejection */
+  if (state.labels){
+    ctx.save();
+    ctx.font = '10px "Geist Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineWidth = 3;
+    const placed = [];
+    const order = SITES.map((S, i) => ({ S, i })).sort((a,b) => b.S.r - a.S.r);
+    for (const o of order){
+      const [x, y] = toScreen(o.S.x, o.S.y);
+      if (x < -90 || x > cw + 90 || y < -30 || y > ch + 30) continue;
+      const tw = ctx.measureText(o.S.n).width;
+      const box = { x: x - tw/2 - 4, y: y - 8, w: tw + 8, h: 16 };
+      let hit = false;
+      for (const p of placed){
+        if (!(box.x + box.w < p.x || box.x > p.x + p.w || box.y + box.h < p.y || box.y > p.y + p.h)){ hit = true; break; }
+      }
+      if (hit) continue;
+      placed.push(box);
+      const on = state.sel && state.sel.type === 'site' && state.sel.id === o.i;
+      ctx.strokeStyle = themeVar('--map-halo');
+      ctx.strokeText(o.S.n, x, y);
+      ctx.fillStyle = on ? themeVar('--accent') : themeVar('--map-ink');
+      ctx.fillText(o.S.n, x, y);
+    }
+    ctx.restore();
+  }
+
+  /* crosshair, only when nothing is selected */
+  if (state.hover && !state.sel){
+    const x = state.hover.x, y = state.hover.y;
+    ctx.save();
+    ctx.strokeStyle = themeVar('--map-ink');
+    ctx.globalAlpha = 0.75;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(x + .5, 0); ctx.lineTo(x + .5, ch); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, y + .5); ctx.lineTo(cw, y + .5); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI*2); ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function resize(){
+  const r = mapEl.parentElement.getBoundingClientRect();
+  if (r.width < 2 || r.height < 2) return;
+  state.dpr = Math.min(window.devicePixelRatio || 1, 2);
+  state.cw = Math.floor(r.width);
+  state.ch = Math.floor(r.height);
+  mapEl.width  = Math.floor(state.cw * state.dpr);
+  mapEl.height = Math.floor(state.ch * state.dpr);
+  clampView();
+  draw();
+  syncZoomLabel();
+}
+
+function updateScaleBar(){
+  if (!state.cw) return;
+  const metresPerUnit = (EXT.e - EXT.w) * 111320 * Math.cos(14.67*Math.PI/180) / LW;
+  const K = k();
+  const targets = [200, 500, 1000, 2000, 5000];
+  let metres = targets[targets.length-1];
+  for (const t of targets){ if (t * (K/metresPerUnit) > 70){ metres = t; break; } }
+  document.getElementById('sb-bar').style.width = (metres / metresPerUnit * K).toFixed(1) + 'px';
+  document.getElementById('sb-label').textContent = metres >= 1000 ? (metres/1000) + ' km' : metres + ' m';
+}
+
+/* ============================================================
+   7. Statistics
+   ============================================================ */
+function pearson(xs, ys){
+  const n = xs.length;
+  let sx=0, sy=0, sxx=0, syy=0, sxy=0;
+  for (let i = 0; i < n; i++){
+    sx += xs[i]; sy += ys[i];
+    sxx += xs[i]*xs[i]; syy += ys[i]*ys[i]; sxy += xs[i]*ys[i];
+  }
+  const den = Math.sqrt((n*sxx - sx*sx) * (n*syy - sy*sy));
+  return den === 0 ? 0 : (n*sxy - sx*sy)/den;
+}
+function linreg(xs, ys){
+  const n = xs.length;
+  let sx=0, sy=0, sxx=0, sxy=0;
+  for (let i = 0; i < n; i++){ sx+=xs[i]; sy+=ys[i]; sxx+=xs[i]*xs[i]; sxy+=xs[i]*ys[i]; }
+  const slope = (n*sxy - sx*sy) / (n*sxx - sx*sx || 1);
+  return { slope, intercept: (sy - slope*sx)/n };
+}
+function mean(a){ let s = 0; for (let i = 0; i < a.length; i++) s += a[i]; return a.length ? s/a.length : 0; }
+
+function samplePairs(step){
+  step = step || 7;
+  const F = state.field, xs = [], ys = [];
+  const waterIdx = LANDUSE.indexOf('Water');
+  for (let i = 0; i < F.ndvi.length; i += step){
+    if (F.klass[i] === waterIdx) continue;
+    xs.push(F.ndvi[i]); ys.push(F.lst[i]);
+  }
+  return { xs, ys };
+}
+
+function zonal(){
+  const F = state.field, n = SITES.length;
+  const aN = new Float64Array(n), aL = new Float64Array(n), aB = new Float64Array(n), cnt = new Int32Array(n);
+  for (let i = 0; i < F.ndvi.length; i++){
+    const s = F.site[i];
+    aN[s] += F.ndvi[i]; aL[s] += F.lst[i]; aB[s] += F.built[i]; cnt[s]++;
+  }
+  return SITES.map((S, i) => ({
+    i, name: S.n, cls: S.cls, cells: cnt[i],
+    ndvi: cnt[i] ? aN[i]/cnt[i] : 0,
+    lst:  cnt[i] ? aL[i]/cnt[i] : 0,
+    built: cnt[i] ? aB[i]/cnt[i] : 0,
+    npx: nativePixels(cnt[i])
+  }));
+}
+
+function byLandUse(){
+  const F = state.field, acc = {}, cnt = {};
+  for (let i = 0; i < F.lst.length; i++){
+    const k = F.klass[i];
+    acc[k] = (acc[k] || 0) + F.lst[i];
+    cnt[k] = (cnt[k] || 0) + 1;
+  }
+  return LANDUSE.map((name, k) => ({ k, name, lst: cnt[k] ? acc[k]/cnt[k] : null, cells: cnt[k] || 0 }))
+                .filter(r => r.lst !== null);
+}
+
+/* ============================================================
+   8. Panels
+   ============================================================ */
+function renderStats(){
+  const { xs, ys } = samplePairs(7);
+  const r = pearson(xs, ys), { slope } = linreg(xs, ys);
+  document.getElementById('s-r').textContent = r.toFixed(3);
+  document.getElementById('s-r2').textContent = (r*r).toFixed(3);
+  document.getElementById('s-slope').innerHTML = (slope*0.1).toFixed(2) + '<small>&deg;C/0.1</small>';
+  document.getElementById('s-n').textContent = xs.length.toLocaleString();
+  document.getElementById('cap-scatter').textContent = 'n = ' + xs.length.toLocaleString();
+  document.getElementById('sb-cells').textContent = xs.length.toLocaleString();
+}
+
+function renderLegend(){
+  const S = SCALES[state.layer];
+  document.getElementById('lg-title').textContent = S.title;
+  document.getElementById('lg-bar').style.background = cssRamp(state.layer);
+  document.getElementById('lg-ticks').innerHTML = S.ticks.map(t => `<span>${t}</span>`).join('');
+  document.getElementById('lg-unit').textContent = S.unit;
+  const z = document.getElementById('lg-zero');
+  if (S.zeroAt !== undefined && S.zeroAt > 0.02 && S.zeroAt < 0.98){
+    z.style.display = 'block'; z.style.left = (S.zeroAt*100).toFixed(1) + '%';
+  } else z.style.display = 'none';
+}
+
+function fitCanvas(cv, h){
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = cv.parentElement.clientWidth;
+  cv.width = Math.floor(w*dpr); cv.height = Math.floor(h*dpr);
+  cv.style.height = h + 'px';
+  const c = cv.getContext('2d');
+  c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { c, w, h };
+}
+
+let scatterPts = [];
+function renderScatter(){
+  const cv = document.getElementById('c-scatter');
+  const { c, w, h } = fitCanvas(cv, 188);
+  const pad = { l: 40, r: 10, t: 12, b: 26 };
+  const ink = themeVar('--text-3'), line = themeVar('--line'), accent = themeVar('--accent');
+  c.clearRect(0, 0, w, h);
+
+  const { xs, ys } = samplePairs(7);
+  const xmin = 0, xmax = 0.9, ymin = 24, ymax = 42;
+  const px = v => pad.l + (v - xmin)/(xmax - xmin) * (w - pad.l - pad.r);
+  const py = v => h - pad.b - (v - ymin)/(ymax - ymin) * (h - pad.t - pad.b);
+
+  c.strokeStyle = line; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(pad.l, pad.t); c.lineTo(pad.l, h - pad.b); c.lineTo(w - pad.r, h - pad.b); c.stroke();
+
+  c.font = '9px "Geist Mono", monospace'; c.fillStyle = ink;
+  c.textAlign = 'right'; c.textBaseline = 'middle';
+  [24, 30, 36, 42].forEach(v => c.fillText(String(v), pad.l - 5, py(v)));
+  c.textAlign = 'center'; c.textBaseline = 'top';
+  [0, 0.3, 0.6, 0.9].forEach(v => c.fillText(v.toFixed(1), px(v), h - pad.b + 5));
+
+  scatterPts = [];
+  c.fillStyle = 'rgba(232,163,61,.42)';
+  for (let i = 0; i < xs.length; i++){
+    const X = px(xs[i]), Y = py(ys[i]);
+    c.fillRect(X - 1, Y - 1, 2.4, 2.4);
+    scatterPts.push({ X, Y, ndvi: xs[i], lst: ys[i] });
+  }
+  const { slope, intercept } = linreg(xs, ys);
+  c.strokeStyle = accent; c.lineWidth = 1.6;
+  c.beginPath();
+  c.moveTo(px(xmin), py(intercept + slope*xmin));
+  c.lineTo(px(xmax), py(intercept + slope*xmax));
+  c.stroke();
+
+  c.fillStyle = ink;
+  c.textAlign = 'left'; c.textBaseline = 'top';
+  c.fillText('NDVI', w - pad.r - 26, h - pad.b + 5);
+  c.save(); c.translate(10, pad.t + 22); c.rotate(-Math.PI/2);
+  c.textAlign = 'left'; c.fillText('LST \u00B0C', 0, 0); c.restore();
+
+  if (state.hoverScatter !== undefined && scatterPts[state.hoverScatter]){
+    const p = scatterPts[state.hoverScatter];
+    c.strokeStyle = accent; c.lineWidth = 1.4;
+    c.beginPath(); c.arc(p.X, p.Y, 5, 0, Math.PI*2); c.stroke();
+  }
+}
+
+let barRows = [];
+function renderBar(){
+  const cv = document.getElementById('c-bar');
+  const { c, w, h } = fitCanvas(cv, 212);
+  const pad = { l: 118, r: 44, t: 8, b: 24 };
+  const ink = themeVar('--text-3'), line = themeVar('--line');
+  c.clearRect(0, 0, w, h);
+
+  const rows = byLandUse().sort((a,b) => a.lst - b.lst);
+  const lo = Math.min(...rows.map(r => r.lst)) - 0.6;
+  const hi = Math.max(...rows.map(r => r.lst)) + 0.4;
+  const bw = (h - pad.t - pad.b) / rows.length;
+  const span = w - pad.l - pad.r;
+  barRows = [];
+
+  rows.forEach((r, i) => {
+    const y = pad.t + i*bw;
+    const t = (r.lst - lo) / (hi - lo);
+    /* Bar length is relative to this epoch's class range so the bars use the
+       width. Bar colour is absolute, anchored to the LST legend, so the same
+       temperature reads the same colour in every epoch. */
+    const tc = clamp((r.lst - SCALES.lst.min) / (SCALES.lst.max - SCALES.lst.min), 0.02, 1);
+    const col = RAMPS.lst(tc);
+    const selected = state.sel && state.sel.type === 'class' && state.sel.id === r.k;
+    c.globalAlpha = (state.sel && state.sel.type === 'class' && !selected) ? 0.3 : 1;
+    c.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
+    c.fillRect(pad.l, y + bw*0.22, Math.max(2, t*span), bw*0.56);
+    if (selected){
+      c.strokeStyle = themeVar('--accent'); c.lineWidth = 1.4;
+      c.strokeRect(pad.l - 1.5, y + bw*0.22 - 1.5, Math.max(2, t*span) + 3, bw*0.56 + 3);
+    }
+    c.fillStyle = ink;
+    c.font = '9.5px "Geist Mono", monospace';
+    c.textAlign = 'right'; c.textBaseline = 'middle';
+    const nm = LANDUSE_SHORT[r.name] || r.name;
+    c.fillText(nm.length > 19 ? nm.slice(0,18) + '\u2026' : nm, pad.l - 7, y + bw/2);
+    c.fillStyle = themeVar('--text-2');
+    c.textAlign = 'left';
+    c.fillText(r.lst.toFixed(1), pad.l + Math.max(2, t*span) + 5, y + bw/2);
+    c.globalAlpha = 1;
+    barRows.push({ y, h: bw, k: r.k, name: r.name, lst: r.lst, cells: r.cells });
+  });
+
+  c.strokeStyle = line; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(pad.l - 0.5, pad.t); c.lineTo(pad.l - 0.5, h - pad.b); c.stroke();
+
+  /* The bars start at the coolest class mean, not at zero. Label the range so
+     the truncated baseline is visible rather than implied. */
+  c.fillStyle = ink;
+  c.font = '9px "Geist Mono", monospace';
+  c.textBaseline = 'top';
+  [0, 0.5, 1].forEach(t => {
+    const X = pad.l + t*span;
+    c.strokeStyle = line;
+    c.beginPath(); c.moveTo(X + .5, h - pad.b); c.lineTo(X + .5, h - pad.b + 3); c.stroke();
+    c.textAlign = t === 0 ? 'left' : t === 1 ? 'right' : 'center';
+    c.fillText((lo + t*(hi - lo)).toFixed(1), X, h - pad.b + 5);
+  });
+  c.textAlign = 'left';
+  c.fillText('\u00B0C', pad.l + span + 6, h - pad.b + 5);
+}
+
+let trendCache = null, trendPts = [];
+function computeTrend(){
+  if (trendCache) return trendCache;
+  const out = [];
+  for (let e = 0; e < EPOCHS.length; e++){
+    const F = buildField(e);
+    out.push({ year: EPOCHS[e].year, lst: mean(F.lst), ndvi: mean(F.ndvi) });
+  }
+  trendCache = out;
+  return out;
+}
+function renderTrend(){
+  const cv = document.getElementById('c-trend');
+  const { c, w, h } = fitCanvas(cv, 132);
+  const pad = { l: 34, r: 12, t: 12, b: 22 };
+  const ink = themeVar('--text-3'), accent = themeVar('--accent'), line = themeVar('--line');
+  c.clearRect(0, 0, w, h);
+
+  const data = computeTrend();
+  const vals = data.map(d => d.lst);
+  const lo = Math.min(...vals) - 0.8, hi = Math.max(...vals) + 0.8;
+  const px = i => pad.l + (i/(data.length-1)) * (w - pad.l - pad.r);
+  const py = v => h - pad.b - (v - lo)/(hi - lo) * (h - pad.t - pad.b);
+
+  c.strokeStyle = line; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(pad.l, pad.t); c.lineTo(pad.l, h - pad.b); c.lineTo(w - pad.r, h - pad.b); c.stroke();
+
+  c.strokeStyle = accent; c.lineWidth = 2.2;
+  c.beginPath();
+  data.forEach((d, i) => i ? c.lineTo(px(i), py(d.lst)) : c.moveTo(px(i), py(d.lst)));
+  c.stroke();
+
+  trendPts = [];
+  data.forEach((d, i) => {
+    const active = EPOCHS[state.epoch].year === d.year;
+    c.fillStyle = accent;
+    c.beginPath(); c.arc(px(i), py(d.lst), active ? 4.4 : 3, 0, Math.PI*2); c.fill();
+    if (active){ c.strokeStyle = themeVar('--panel'); c.lineWidth = 1.6; c.stroke(); }
+    c.fillStyle = active ? themeVar('--text') : themeVar('--text-2');
+    c.font = '9.5px "Geist Mono", monospace';
+    c.textAlign = 'center'; c.textBaseline = 'top';
+    c.fillText(d.year, px(i), h - pad.b + 5);
+    c.textBaseline = 'bottom';
+    c.fillText(d.lst.toFixed(2), px(i), py(d.lst) - 6);
+    trendPts.push({ X: px(i), Y: py(d.lst), year: d.year, lst: d.lst, ndvi: d.ndvi });
+  });
+
+  c.fillStyle = ink; c.font = '9px "Geist Mono", monospace';
+  c.textAlign = 'right'; c.textBaseline = 'middle';
+  c.fillText(hi.toFixed(0), pad.l - 5, py(hi) + 6);
+  c.fillText(lo.toFixed(0), pad.l - 5, py(lo) - 6);
+
+  const d = data[data.length-1].lst - data[0].lst;
+  document.getElementById('cap-trend').textContent =
+    (d >= 0 ? '+' : '') + d.toFixed(2) + ' \u00B0C over ' + (data[data.length-1].year - data[0].year) + ' yr';
+}
+
+function renderRanks(){
+  const z = zonal().filter(r => r.npx >= COVER_THRESHOLD);
+  const hot = [...z].sort((a,b) => b.lst - a.lst).slice(0, 4);
+  const cool = [...z].sort((a,b) => a.lst - b.lst).slice(0, 4);
+  const draw = (rows, el, cls) => {
+    const lo = rows[rows.length-1].lst, hi = rows[0].lst;
+    document.getElementById(el).innerHTML = rows.map(r => {
+      const t = hi === lo ? 1 : (cls === 'hot' ? (r.lst - lo)/(hi - lo) : (hi - r.lst)/(hi - lo));
+      const on = state.sel && state.sel.type === 'site' && state.sel.id === r.i;
+      return `<button class="rankrow" data-site="${r.i}" aria-pressed="${on}">` +
+             `<span class="nm">${r.name}</span>` +
+             `<span class="bar"><i class="${cls === 'cool' ? 'cool' : ''}" style="width:${(t*100).toFixed(0)}%"></i></span>` +
+             `<span class="v">${r.lst.toFixed(1)}</span></button>`;
+    }).join('');
+  };
+  draw(hot, 'rank-hot', 'hot');
+  draw(cool, 'rank-cool', 'cool');
+}
+
+function renderSelection(){
+  const body = document.getElementById('sel-body');
+  const empty = document.getElementById('sel-empty');
+  const clearBtn = document.getElementById('sel-clear');
+  const chip = document.getElementById('selchip');
+
+  const selRow = document.getElementById('tb-selrow');
+  if (!state.sel){
+    body.style.display = 'none'; empty.style.display = 'block';
+    clearBtn.style.display = 'none'; chip.classList.remove('on');
+    selRow.style.display = 'none';
+    return;
+  }
+  body.style.display = 'block'; empty.style.display = 'none';
+  clearBtn.style.display = 'inline-block';
+  chip.classList.add('on');
+  selRow.style.display = 'flex';
+  document.getElementById('tb-selname').textContent = state.sel.label;
+
+  const F = state.field;
+  let cells = 0, sN = 0, sL = 0, sB = 0, aL = 0;
+  for (let i = 0; i < F.ndvi.length; i++){
+    aL += F.lst[i];
+    const hit = state.sel.type === 'site' ? F.site[i] === state.sel.id : F.klass[i] === state.sel.id;
+    if (hit){ cells++; sN += F.ndvi[i]; sL += F.lst[i]; sB += F.built[i]; }
+  }
+  aL /= F.lst.length;
+  const mN = cells ? sN/cells : 0, mL = cells ? sL/cells : 0, mB = cells ? sB/cells : 0;
+  const dT = mL - aL;
+
+  document.getElementById('selchip-n').textContent = state.sel.label;
+  document.getElementById('selchip-v').textContent =
+    mL.toFixed(2) + ' \u00B0C  \u00B7  ' + (dT >= 0 ? '+' : '') + dT.toFixed(2) + ' vs area';
+  document.getElementById('tb-selval').textContent =
+    mL.toFixed(2) + ' \u00B0C  \u00B7  ' + (dT >= 0 ? '+' : '') + dT.toFixed(2) + ' vs area';
+
+  const rows = [
+    ['Type', state.sel.type === 'site' ? 'Barangay' : 'Land-use class'],
+    ['Cells', cells.toLocaleString()],
+    ['Native thermal px', nativePixels(cells).toLocaleString()],
+    ['Mean NDVI', mN.toFixed(3)],
+    ['Mean LST', mL.toFixed(2) + ' \u00B0C'],
+    ['Mean NDBI', mB.toFixed(3)],
+    ['Anomaly vs area', (dT >= 0 ? '+' : '') + dT.toFixed(2) + ' \u00B0C']
+  ];
+  let html = rows.map(r => `<div class="kv2"><span>${r[0]}</span><span>${r[1]}</span></div>`).join('');
+  if (state.sel.type === 'site'){
+    const z = zonal()[state.sel.id];
+    if (z && z.npx < COVER_THRESHOLD){
+      html += `<div class="note" style="margin-top:11px;font-size:11px">
+        Only ${z.npx} native thermal pixels. Treat this mean as indicative.</div>`;
+    }
+  }
+  body.innerHTML = html;
+}
+
+function currentRows(){
+  let rows = zonal();
+  const q = state.query.trim().toLowerCase();
+  if (q) rows = rows.filter(r => r.name.toLowerCase().indexOf(q) >= 0 || r.cls.toLowerCase().indexOf(q) >= 0);
+  const key = state.sortKey, dir = state.sortDir;
+  rows.sort((a, b) => {
+    const va = a[key], vb = b[key];
+    if (typeof va === 'string') return va.localeCompare(vb) * dir;
+    return (va - vb) * dir;
+  });
+  return rows;
+}
+function renderTable(){
+  const rows = currentRows();
+  document.getElementById('tb-body').innerHTML = rows.map(r => {
+    const thin = r.npx < COVER_THRESHOLD;
+    const on = state.sel && state.sel.type === 'site' && state.sel.id === r.i;
+    return `<tr data-site="${r.i}" aria-selected="${on}">
+      <td class="bn">${r.name}</td>
+      <td>${r.cls}</td>
+      <td class="n">${r.ndvi.toFixed(3)}</td>
+      <td class="n">${r.lst.toFixed(2)} &deg;C</td>
+      <td class="n">${r.npx}</td>
+      <td><span class="flag ${thin ? 'thin' : 'ok'}" title="${thin
+        ? 'Below ' + COVER_THRESHOLD + ' native 100 m thermal pixels'
+        : 'Sufficient thermal coverage'}">${thin ? 'below threshold' : 'sufficient'}</span></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('tb-none').style.display = rows.length ? 'none' : 'block';
+  document.getElementById('tb-count').textContent = rows.length + ' of ' + SITES.length + ' shown';
+  document.querySelectorAll('thead th button').forEach(b => {
+    b.querySelector('.ar').textContent =
+      b.dataset.sort === state.sortKey ? (state.sortDir > 0 ? '\u25B2' : '\u25BC') : '';
+  });
+}
+
+/* ============================================================
+   9. Readout
+   ============================================================ */
+function viewCentreText(){
+  return (EXT.n - state.view.cy/LH*(EXT.n-EXT.s)).toFixed(4) + '\u00B0N ' +
+         (EXT.w + state.view.cx/LW*(EXT.e-EXT.w)).toFixed(4) + '\u00B0E';
+}
+function setReadout(cell){
+  const F = state.field;
+  const g = id => document.getElementById(id);
+  const llk = document.getElementById('ro-llk');
+  if (!cell){
+    if (state.sel){
+      let n = 0, sN = 0, sL = 0;
+      for (let i = 0; i < F.ndvi.length; i++){
+        const hit = state.sel.type === 'site' ? F.site[i] === state.sel.id : F.klass[i] === state.sel.id;
+        if (hit){ n++; sN += F.ndvi[i]; sL += F.lst[i]; }
+      }
+      g('ro-title').textContent = 'Selection';
+      g('ro-brgy').textContent = state.sel.label;
+      g('ro-cls').textContent = state.sel.type === 'site' ? 'Barangay' : 'Land-use class';
+      g('ro-ndvi').textContent = n ? (sN/n).toFixed(3) : '\u2014';
+      g('ro-lst').textContent = n ? (sL/n).toFixed(2) + ' \u00B0C' : '\u2014';
+      g('ro-lst').className = 'rv';
+      llk.textContent = 'View centre';
+      g('ro-ll').textContent = viewCentreText();
+      g('ro-hint').textContent = 'Press Esc or click the chip to clear';
+    } else {
+      let sN = 0, sL = 0;
+      for (let i = 0; i < F.ndvi.length; i++){ sN += F.ndvi[i]; sL += F.lst[i]; }
+      g('ro-title').textContent = 'Study area';
+      g('ro-brgy').textContent = SITES.length + ' barangays';
+      g('ro-cls').textContent = 'All classes';
+      g('ro-ndvi').textContent = (sN/F.ndvi.length).toFixed(3);
+      g('ro-lst').textContent = (sL/F.lst.length).toFixed(2) + ' \u00B0C';
+      g('ro-lst').className = 'rv';
+      llk.textContent = 'View centre';
+      g('ro-ll').textContent = viewCentreText();
+      g('ro-hint').textContent = 'Click a barangay to select it';
+    }
+    return;
+  }
+  const i = cell.i;
+  llk.textContent = 'Cursor';
+  g('ro-title').textContent = 'Cursor';
+  g('ro-brgy').textContent = SITES[F.site[i]].n;
+  g('ro-cls').textContent = LANDUSE[F.klass[i]];
+  g('ro-ndvi').textContent = F.ndvi[i].toFixed(3);
+  g('ro-lst').textContent = F.lst[i].toFixed(2) + ' \u00B0C';
+  g('ro-lst').className = 'rv ' + (F.lst[i] > 35 ? 'hot' : F.lst[i] < 29 ? 'cool' : '');
+  g('ro-ll').textContent = cell.lat.toFixed(4) + '\u00B0N ' + cell.lon.toFixed(4) + '\u00B0E';
+  g('ro-hint').textContent = 'Click to select this barangay';
+}
+
+/* ============================================================
+   10. Selection
+   ============================================================ */
+function select(type, id, label){
+  if (state.sel && state.sel.type === type && state.sel.id === id) state.sel = null;
+  else state.sel = { type, id, label };
+  state.selMaskKey = '';
+  afterSelection();
+}
+function clearSelection(){ state.sel = null; state.selMaskKey = ''; afterSelection(); }
+function afterSelection(){
+  buildSelMask();
+  renderSelection();
+  renderTable();
+  renderRanks();
+  renderBar();
+  setReadout(null);
+  draw();
+}
+
+/* ============================================================
+   11. Refresh
+   ============================================================ */
+function refreshAll(){
+  state.field = buildField(state.epoch);
+  const E = EPOCHS[state.epoch];
+  document.getElementById('st-epoch').textContent = E.year;
+  document.getElementById('ex-epoch').textContent = E.year;
+  document.getElementById('tb-epoch').textContent = E.year;
+  document.getElementById('sb-epoch').textContent = E.year;
+  document.getElementById('sb-layer').textContent = SCALES[state.layer].title;
+  document.getElementById('layer-active').textContent = SCALES[state.layer].title;
+
+  const change = isChange(state.layer);
+  document.querySelectorAll('#epochseg [data-epoch]').forEach(b => { b.disabled = change; });
+  document.getElementById('epochnote').innerHTML = change
+    ? 'Change layers compare the first and last epoch. Epoch selection does not apply.'
+    : 'Dry-season median composite, Jan&ndash;Apr. QA_PIXEL masked before compositing.';
+
+  state.selMaskKey = '';
+  renderLegend();
+  renderStats();
+  renderScatter();
+  renderBar();
+  renderTrend();
+  renderRanks();
+  renderTable();
+  renderSelection();
+  setReadout(null);
+  draw();
+}
+
+/* ============================================================
+   12. Wiring
+   ============================================================ */
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', String(x === t)));
+    document.querySelectorAll('.view').forEach(v => v.classList.toggle('is-active', v.id === 'view-' + t.dataset.view));
+    if (t.dataset.view === 'console') requestAnimationFrame(resize);
+  });
+});
+
+document.querySelectorAll('[data-theme-set]').forEach(b => {
+  b.addEventListener('click', () => {
+    document.documentElement.setAttribute('data-theme', b.dataset.themeSet);
+    document.querySelectorAll('[data-theme-set]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    draw(); renderLegend(); renderScatter(); renderBar(); renderTrend();
+  });
+});
+
+document.querySelectorAll('.layer').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.layer').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    state.layer = b.dataset.layer;
+    refreshAll();
+  });
+});
+
+document.querySelectorAll('[data-epoch]').forEach(b => {
+  b.addEventListener('click', () => {
+    if (b.disabled) return;
+    document.querySelectorAll('[data-epoch]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    state.epoch = Number(b.dataset.epoch);
+    trendCache = null;
+    refreshAll();
+  });
+});
+
+document.getElementById('op').addEventListener('input', e => {
+  state.overlay = Number(e.target.value)/100;
+  document.getElementById('op-out').textContent = e.target.value;
+  e.target.style.setProperty('--fill', ((e.target.value - e.target.min)/(e.target.max - e.target.min)*100) + '%');
+  draw();
+});
+document.getElementById('op').style.setProperty('--fill', '100%');
+
+function bindToggle(id, key){
+  const el = document.getElementById(id);
+  el.addEventListener('click', () => {
+    const next = el.getAttribute('aria-pressed') !== 'true';
+    el.setAttribute('aria-pressed', String(next));
+    state[key] = next;
+    draw();
+  });
+}
+bindToggle('t-bounds','bounds'); bindToggle('t-labels','labels');
+bindToggle('t-roads','roads');   bindToggle('t-grid','grid');
+
+/* ---------- map: zoom, pan, select ---------- */
+let dragging = null;
+mapEl.addEventListener('wheel', e => {
+  e.preventDefault();
+  const r = mapEl.getBoundingClientRect();
+  setZoom(state.view.zoom * (e.deltaY < 0 ? 1.18 : 1/1.18), e.clientX - r.left, e.clientY - r.top);
+}, { passive: false });
+
+mapEl.addEventListener('pointerdown', e => {
+  mapEl.setPointerCapture(e.pointerId);
+  dragging = { x: e.clientX, y: e.clientY, cx: state.view.cx, cy: state.view.cy, moved: false };
+  mapEl.classList.add('dragging');
+});
+mapEl.addEventListener('pointermove', e => {
+  const r = mapEl.getBoundingClientRect();
+  const sx = e.clientX - r.left, sy = e.clientY - r.top;
+  if (dragging){
+    const dx = e.clientX - dragging.x, dy = e.clientY - dragging.y;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragging.moved = true;
+    const K = k();
+    state.view.cx = dragging.cx - dx/K;
+    state.view.cy = dragging.cy - dy/K;
+    state.hoverCell = null;
+    clampView();
+    draw();
+    return;
+  }
+  state.hover = { x: sx, y: sy };
+  const [lx, ly] = toLogical(sx, sy);
+  if (lx < 0 || lx > LW || ly < 0 || ly > LH){ state.hoverCell = null; if (!state.sel) setReadout(null); draw(); return; }
+  const gx = clamp(Math.floor(lx / LW * GW), 0, GW-1);
+  const gy = clamp(Math.floor(ly / LH * GH), 0, GH-1);
+  state.hoverCell = {
+    i: gy*GW + gx,
+    lon: EXT.w + lx/LW * (EXT.e - EXT.w),
+    lat: EXT.n - ly/LH * (EXT.n - EXT.s)
+  };
+  if (!state.sel) setReadout(state.hoverCell);
+  draw();
+});
+mapEl.addEventListener('pointerup', e => {
+  if (dragging && !dragging.moved){
+    const r = mapEl.getBoundingClientRect();
+    const [lx, ly] = toLogical(e.clientX - r.left, e.clientY - r.top);
+    if (lx >= 0 && lx <= LW && ly >= 0 && ly <= LH){
+      const gx = clamp(Math.floor(lx / LW * GW), 0, GW-1);
+      const gy = clamp(Math.floor(ly / LH * GH), 0, GH-1);
+      const s = state.field.site[gy*GW + gx];
+      select('site', s, SITES[s].n);
+    }
+  }
+  dragging = null;
+  mapEl.classList.remove('dragging');
+});
+mapEl.addEventListener('pointerleave', () => {
+  dragging = null; state.hover = null; state.hoverCell = null;
+  mapEl.classList.remove('dragging');
+  setReadout(null); draw();
+});
+mapEl.addEventListener('dblclick', e => {
+  const r = mapEl.getBoundingClientRect();
+  setZoom(state.view.zoom * 1.6, e.clientX - r.left, e.clientY - r.top);
+});
+
+mapEl.addEventListener('keydown', e => {
+  const step = 60 / k();
+  const pan = { ArrowLeft:[-step,0], ArrowRight:[step,0], ArrowUp:[0,-step], ArrowDown:[0,step] }[e.key];
+  if (pan){
+    e.preventDefault();
+    state.view.cx += pan[0]; state.view.cy += pan[1];
+    clampView(); draw(); return;
+  }
+  if (e.key === '+' || e.key === '='){ e.preventDefault(); setZoom(state.view.zoom*1.25); return; }
+  if (e.key === '-' || e.key === '_'){ e.preventDefault(); setZoom(state.view.zoom/1.25); return; }
+  if (e.key === '0'){
+    e.preventDefault();
+    state.view.zoom = 1; state.view.cx = LW/2; state.view.cy = LH/2;
+    clampView(); syncZoomLabel(); draw(); return;
+  }
+  if (e.key === 'Enter'){
+    e.preventDefault();
+    const [lx, ly] = toLogical(state.cw/2, state.ch/2);
+    const gx = clamp(Math.floor(lx/LW*GW), 0, GW-1), gy = clamp(Math.floor(ly/LH*GH), 0, GH-1);
+    const s = state.field.site[gy*GW + gx];
+    select('site', s, SITES[s].n);
+    return;
+  }
+  if (e.key === 'Escape') clearSelection();
+});
+
+document.getElementById('z-in').addEventListener('click', () => setZoom(state.view.zoom*1.3));
+document.getElementById('z-out').addEventListener('click', () => setZoom(state.view.zoom/1.3));
+document.getElementById('z-fit').addEventListener('click', () => {
+  state.view.zoom = 1; state.view.cx = LW/2; state.view.cy = LH/2;
+  clampView(); syncZoomLabel(); draw();
+});
+document.getElementById('z-help').addEventListener('click', () => {
+  document.getElementById('shortcuts').classList.toggle('on');
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && state.sel && document.activeElement !== mapEl) clearSelection();
+});
+
+/* ---------- selection from lists ---------- */
+document.getElementById('selchip-x').addEventListener('click', clearSelection);
+document.getElementById('sel-clear').addEventListener('click', clearSelection);
+document.getElementById('tb-selclear').addEventListener('click', clearSelection);
+['rank-hot','rank-cool'].forEach(id => {
+  document.getElementById(id).addEventListener('click', e => {
+    const b = e.target.closest('.rankrow');
+    if (b){ const i = Number(b.dataset.site); select('site', i, SITES[i].n); }
+  });
+});
+document.getElementById('tb-body').addEventListener('click', e => {
+  const tr = e.target.closest('tr');
+  if (tr){ const i = Number(tr.dataset.site); select('site', i, SITES[i].n); }
+});
+
+/* ---------- table controls ---------- */
+document.querySelectorAll('thead th button').forEach(b => {
+  b.addEventListener('click', () => {
+    const key = b.dataset.sort;
+    if (state.sortKey === key) state.sortDir *= -1;
+    else { state.sortKey = key; state.sortDir = (key === 'name' || key === 'cls') ? 1 : -1; }
+    renderTable();
+  });
+});
+document.getElementById('tb-search').addEventListener('input', e => {
+  state.query = e.target.value; renderTable();
+});
+document.getElementById('tb-export').addEventListener('click', () => {
+  const rows = currentRows();
+  const head = ['Barangay','Land use','Mean NDVI','Mean LST (C)','Native thermal px','Coverage'];
+  const lines = [head.join(',')].concat(rows.map(r => [
+    '"' + r.name + '"', '"' + r.cls + '"', r.ndvi.toFixed(3), r.lst.toFixed(2), r.npx,
+    r.npx < COVER_THRESHOLD ? 'below threshold' : 'sufficient'
+  ].join(',')));
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'greenspace-lst-barangays-' + EPOCHS[state.epoch].year + '.csv';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+});
+
+/* ---------- chart hover ---------- */
+function chartTip(cv, tipId, x, y, html){
+  const tip = document.getElementById(tipId);
+  tip.innerHTML = html;
+  tip.classList.add('on');
+  const boxW = cv.parentElement.clientWidth;
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  let left = x + 12, top = y - th - 8;
+  if (left + tw > boxW - 4) left = x - tw - 12;
+  if (top < 4) top = y + 14;
+  tip.style.left = left + 'px';
+  tip.style.top = top + 'px';
+}
+function hideTip(id){ document.getElementById(id).classList.remove('on'); }
+
+const scatEl = document.getElementById('c-scatter');
+scatEl.addEventListener('mousemove', e => {
+  const r = scatEl.getBoundingClientRect();
+  const x = e.clientX - r.left, y = e.clientY - r.top;
+  let best = -1, bd = 196;
+  scatterPts.forEach((p, i) => {
+    const d = (p.X - x)*(p.X - x) + (p.Y - y)*(p.Y - y);
+    if (d < bd){ bd = d; best = i; }
+  });
+  if (best !== state.hoverScatter){ state.hoverScatter = best; renderScatter(); }
+  if (best >= 0){
+    const p = scatterPts[best];
+    chartTip(scatEl, 'tip-scatter', x, y, 'NDVI <b>' + p.ndvi.toFixed(3) + '</b><br>LST <b>' + p.lst.toFixed(2) + '</b> \u00B0C');
+  } else hideTip('tip-scatter');
+});
+scatEl.addEventListener('mouseleave', () => {
+  state.hoverScatter = undefined; renderScatter(); hideTip('tip-scatter');
+});
+
+const barEl = document.getElementById('c-bar');
+barEl.addEventListener('mousemove', e => {
+  const r = barEl.getBoundingClientRect();
+  const x = e.clientX - r.left, y = e.clientY - r.top;
+  const row = barRows.find(b => y >= b.y && y < b.y + b.h);
+  if (row) chartTip(barEl, 'tip-bar', x, y,
+    row.name + '<br>LST <b>' + row.lst.toFixed(2) + '</b> \u00B0C<br>' + row.cells.toLocaleString() + ' cells');
+  else hideTip('tip-bar');
+});
+barEl.addEventListener('click', e => {
+  const y = e.clientY - barEl.getBoundingClientRect().top;
+  const row = barRows.find(b => y >= b.y && y < b.y + b.h);
+  if (row) select('class', row.k, row.name);
+});
+barEl.addEventListener('mouseleave', () => hideTip('tip-bar'));
+
+const trendEl = document.getElementById('c-trend');
+trendEl.addEventListener('mousemove', e => {
+  const r = trendEl.getBoundingClientRect();
+  const x = e.clientX - r.left, y = e.clientY - r.top;
+  let best = null;
+  trendPts.forEach(p => { if (!best || Math.abs(p.X - x) < Math.abs(best.X - x)) best = p; });
+  if (best && Math.abs(best.X - x) < 40)
+    chartTip(trendEl, 'tip-trend', x, y,
+      best.year + '<br>LST <b>' + best.lst.toFixed(2) + '</b> \u00B0C<br>NDVI <b>' + best.ndvi.toFixed(3) + '</b>');
+  else hideTip('tip-trend');
+});
+trendEl.addEventListener('click', e => {
+  if (isChange(state.layer)) return;
+  const x = e.clientX - trendEl.getBoundingClientRect().left;
+  let best = null;
+  trendPts.forEach(p => { if (!best || Math.abs(p.X - x) < Math.abs(best.X - x)) best = p; });
+  if (!best) return;
+  const idx = EPOCHS.findIndex(ep => ep.year === best.year);
+  if (idx >= 0){
+    document.querySelectorAll('[data-epoch]').forEach(x => x.setAttribute('aria-pressed', String(Number(x.dataset.epoch) === idx)));
+    state.epoch = idx; trendCache = null; refreshAll();
+  }
+});
+trendEl.addEventListener('mouseleave', () => hideTip('tip-trend'));
+
+/* ---------- resize ---------- */
+let rt;
+const onResize = () => { clearTimeout(rt); rt = setTimeout(resize, 140); };
+window.addEventListener('resize', onResize);
+new ResizeObserver(onResize).observe(mapEl.parentElement);
+
+/* ============================================================
+   13. Boot
+   ============================================================ */
+resize();
+state.change = buildChange();
+fitChangeScales();
+refreshAll();
+setTimeout(() => { document.getElementById('mapstatus').classList.add('on'); buildMask(); }, 30);
+</script>
+</body>
+</html>

@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GreenSpace–LST Console · Novaliches 2026</title>
+<meta name="description" content="Measured NDVI and land surface temperature console for 20 barangays in Novaliches, Quezon City. Sentinel-2 and Landsat 2026 median composite.">
+<link rel="stylesheet" href="vendor/leaflet.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<a class="sr" href="#map">Skip to map</a>
+
+<header class="topbar">
+  <div class="mark" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z"/><path d="M9 4v13M15 7v13"/>
+    </svg>
+  </div>
+  <div class="brand">
+    <h1>GreenSpace&ndash;LST Console</h1>
+    <span>Novaliches, Quezon City &middot; 20 barangays</span>
+  </div>
+
+  <nav class="tabs" role="tablist" aria-label="Views">
+    <button class="tab" role="tab" aria-selected="true" data-view="console">Console</button>
+    <button class="tab" role="tab" aria-selected="false" data-view="compare">Compare</button>
+    <button class="tab" role="tab" aria-selected="false" data-view="relationship">Relationship</button>
+    <button class="tab" role="tab" aria-selected="false" data-view="barangays">Barangays</button>
+    <button class="tab" role="tab" aria-selected="false" data-view="method">Method</button>
+  </nav>
+
+  <div class="spacer"></div>
+
+  <span class="badge" id="badge" title=""><b>Measured</b> Sentinel-2 + Landsat &middot; <span id="badge-asof">2026 composite</span></span>
+
+  <button class="who" id="who" data-mode="offline" title="">offline</button>
+
+  <div class="seg" role="group" aria-label="Appearance">
+    <button id="th-dark" aria-pressed="true" data-theme-set="dark">Dark</button>
+    <button id="th-light" aria-pressed="false" data-theme-set="light">Light</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ================= CONSOLE ================= -->
+  <section id="view-console" class="view is-active" role="tabpanel" aria-label="Console">
+
+    <aside class="rail rail-left">
+      <div class="block">
+        <h2>Layers <em id="layer-active">NDVI</em></h2>
+        <button class="layer" data-layer="ndvi" aria-pressed="true">
+          <span class="sw" style="background:#6f9e4e"></span>
+          <span class="nm">Vegetation index</span><span class="k">NDVI</span>
+        </button>
+        <button class="layer" data-layer="lst" aria-pressed="false">
+          <span class="sw" style="background:#c25a1e"></span>
+          <span class="nm">Surface temperature</span><span class="k">LST</span>
+        </button>
+        <button class="layer" data-layer="resid" aria-pressed="false">
+          <span class="sw" style="background:#8a8a95"></span>
+          <span class="nm">Heat residual</span><span class="k">LST&#8211;f(NDVI)</span>
+        </button>
+        <button class="layer" data-layer="class" aria-pressed="false">
+          <span class="sw" style="background:linear-gradient(90deg,#96624a 33%,#d8c860 33% 66%,#40965c 66%)"></span>
+          <span class="nm">Vegetation class</span><span class="k">3 bins</span>
+        </button>
+      </div>
+
+      <div class="block">
+        <h2>Basemap</h2>
+        <div class="basemaps" role="group" aria-label="Basemap">
+          <button data-basemap="dark" aria-pressed="true">Dark</button>
+          <button data-basemap="light" aria-pressed="false">Light</button>
+          <button data-basemap="streets" aria-pressed="false">Streets</button>
+          <button data-basemap="satellite" aria-pressed="false">Satellite</button>
+        </div>
+        <p style="font-size:10.5px;color:var(--text-3);margin-top:9px;line-height:1.55">
+          Real tiles under the measured raster. Drag to pan, scroll to zoom.
+        </p>
+      </div>
+
+      <div class="block">
+        <h2>Observation window</h2>
+        <div style="font-size:10.5px;line-height:1.9;color:var(--text-2);font-family:'Geist Mono',ui-monospace,monospace">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text-3)">composite</span><span>2026 median</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text-3)">sentinel-2</span><span id="win-s2">&mdash;</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text-3)">landsat</span><span id="win-ls">&mdash;</span></div>
+        </div>
+        <p style="font-size:10.5px;color:var(--text-3);margin-top:9px;line-height:1.55">
+          One epoch, not three. SCL and QA_PIXEL masked before compositing; a single
+          year cannot show a trend, so this console does not draw one.
+        </p>
+      </div>
+
+      <div class="block">
+        <h2>Display</h2>
+        <div class="ctrl">
+          <label for="op">Overlay</label>
+          <input id="op" type="range" min="20" max="100" value="78">
+          <output id="op-out">78</output>
+        </div>
+        <div class="switchrow"><span>Barangay boundaries</span>
+          <button class="toggle" id="t-bounds" aria-pressed="true" aria-label="Barangay boundaries"></button></div>
+        <div class="switchrow"><span>Barangay labels</span>
+          <button class="toggle" id="t-labels" aria-pressed="true" aria-label="Barangay labels"></button></div>
+      </div>
+
+      <div class="block">
+        <h2>Raster source</h2>
+        <div style="font-size:10.5px;line-height:1.9;color:var(--text-2);font-family:'Geist Mono',ui-monospace,monospace">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text-3)">tile</span><span>T51PTS</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text-3)">path / row</span><span>116 / 050</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text-3)">thermal</span><span>ST_B10 &middot; 100 m</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text-3)">grid</span><span id="grid-label">&mdash;</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text-3)">cell</span><span id="cell-label">&mdash;</span></div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="mapwrap">
+      <div id="map" class="leaflet-host" role="application"
+        aria-label="Map of Novaliches with the measured raster. Drag to pan, scroll to zoom, click a barangay to select it."></div>
+
+      <div class="mapframe" aria-hidden="true"></div>
+
+      <div class="maplayer">
+        <div class="corner" id="north" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round">
+            <path d="M12 2l5 18-5-4-5 4z"/>
+          </svg>
+          <span>N</span>
+        </div>
+
+        <div class="corner" id="readout" aria-live="polite">
+          <div class="rt" id="ro-title">Study area</div>
+          <div class="rr"><span class="rk">Barangay</span><span class="rv" id="ro-brgy">&mdash;</span></div>
+          <div class="rr"><span class="rk">NDVI</span><span class="rv" id="ro-ndvi">&mdash;</span></div>
+          <div class="rr"><span class="rk">LST</span><span class="rv" id="ro-lst">&mdash;</span></div>
+          <div class="rr"><span class="rk">Residual</span><span class="rv" id="ro-res">&mdash;</span></div>
+          <div class="rr"><span class="rk" id="ro-llk">Cursor</span><span class="rv" id="ro-ll">&mdash;</span></div>
+          <div class="hint" id="ro-hint">Click a barangay to select it</div>
+        </div>
+
+        <div class="corner" id="legend">
+          <div class="lt" id="lg-title">NDVI</div>
+          <div class="bar" id="lg-bar"><div class="zero" id="lg-zero" style="display:none"></div></div>
+          <div class="ticks" id="lg-ticks"></div>
+          <div class="unit" id="lg-unit">index</div>
+          <div class="unit" id="lg-note" style="margin-top:3px;opacity:.72"></div>
+        </div>
+
+        <div class="corner" id="mapctl">
+          <button id="z-in" aria-label="Zoom in" title="Zoom in (+)">+</button>
+          <button id="z-out" aria-label="Zoom out" title="Zoom out (&minus;)">&minus;</button>
+          <button id="z-fit" aria-label="Reset view" title="Fit study area">&#9633;</button>
+          <div class="zl" id="z-level">1.0&times;</div>
+          <button id="z-help" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+        </div>
+
+        <div class="corner" id="shortcuts">
+          <div class="kt">Keyboard</div>
+          <div class="kr"><span>Pan</span><span><kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd></span></div>
+          <div class="kr"><span>Zoom</span><span><kbd>+</kbd><kbd>&minus;</kbd></span></div>
+          <div class="kr"><span>Fit study area</span><span><kbd>0</kbd></span></div>
+          <div class="kr"><span>Clear selection</span><span><kbd>Esc</kbd></span></div>
+        </div>
+
+        <div class="corner" id="selchip">
+          <span class="sn" id="selchip-n">Selection</span>
+          <span class="sv" id="selchip-v"></span>
+          <button id="selchip-x" aria-label="Clear selection">&times;</button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="rail rail-right">
+
+      <div class="block" id="selcard">
+        <h2>Selection <em id="sel-name"></em>
+          <button class="btn" id="sel-clear" style="display:none;font-size:10px;padding:3px 8px;margin-left:auto">Clear</button></h2>
+        <div class="empty" id="sel-empty">
+          Nothing selected. Click a barangay on the map, a row in the table, or a bar to isolate it.
+        </div>
+        <div id="sel-body" style="display:none"></div>
+      </div>
+
+
+      <div class="block">
+        <h2>NDVI &ndash; LST relationship <em id="st-epoch">2026</em></h2>
+        <div class="statgrid">
+          <div class="stat"><div class="sk">Pearson r</div><div class="sv a" id="s-r">&mdash;</div></div>
+          <div class="stat"><div class="sk">Coefficient of determination</div><div class="sv" id="s-r2">&mdash;</div></div>
+          <div class="stat"><div class="sk">Slope</div><div class="sv" id="s-slope">&mdash;<small>&deg;C/0.1</small></div></div>
+          <div class="stat"><div class="sk">Sampled cells</div><div class="sv" id="s-n">&mdash;</div></div>
+        </div>
+      </div>
+
+      <div class="block">
+        <h2>Scatter &middot; cell level</h2>
+        <div class="chartbox">
+          <canvas id="c-scatter" height="188"></canvas>
+          <div class="charttip" id="tip-scatter"></div>
+          <div class="cap"><span>NDVI against LST, sampled cells</span><span class="mono" id="cap-scatter">n = &mdash;</span></div>
+        </div>
+      </div>
+
+      <div class="block">
+        <h2>Mean LST by barangay</h2>
+        <div class="chartbox">
+          <canvas id="c-bar" height="212"></canvas>
+          <div class="charttip" id="tip-bar"></div>
+          <div class="cap"><span>Top 12 by mean LST &middot; click to isolate</span><span class="mono">&deg;C</span></div>
+        </div>
+      </div>
+
+      <div class="block">
+        <h2>LST distribution</h2>
+        <div class="chartbox">
+          <canvas id="c-hist" height="132"></canvas>
+          <div class="charttip" id="tip-hist"></div>
+          <div class="cap"><span>Cells, 1 &deg;C bins</span><span class="mono" id="cap-hist">&deg;C</span></div>
+        </div>
+      </div>
+
+      <div class="block">
+        <h2>Barangay extremes <em id="ex-epoch">2026</em></h2>
+        <div id="rank-hot"></div>
+        <div style="height:9px"></div>
+        <div id="rank-cool"></div>
+      </div>
+
+    </aside>
+  </section>
+
+  <!-- ================= COMPARE ================= -->
+  <section id="view-compare" class="view" role="tabpanel" aria-label="Compare">
+    <div class="cmpbar">
+      <div class="cmpctl" data-cmp="a">
+        <span class="lb">Left map</span>
+        <button data-key="ndvi" aria-pressed="true">NDVI</button>
+        <button data-key="lst">LST &deg;C</button>
+        <button data-key="resid">Residual</button>
+        <button data-key="klass">Class</button>
+      </div>
+      <div class="cmpctl" data-cmp="b">
+        <span class="lb">Right map</span>
+        <button data-key="ndvi">NDVI</button>
+        <button data-key="lst" aria-pressed="true">LST &deg;C</button>
+        <button data-key="resid">Residual</button>
+        <button data-key="klass">Class</button>
+      </div>
+      <span class="cmp-hint">pan or zoom either map &mdash; the other follows</span>
+    </div>
+
+    <div class="cmpwrap">
+      <div class="cmppane"><div class="cmpmap" id="cmpA"></div>
+        <div class="cmptag">Left</div></div>
+      <div class="cmppane"><div class="cmpmap" id="cmpB"></div>
+        <div class="cmptag">Right</div></div>
+    </div>
+
+    <div class="cmppanel">
+      <div class="cmphead">
+        <h3 id="cmp-head">Barangay A vs B</h3>
+        <div class="cmpsel">
+          <label>A <select id="cmp-a"></select></label>
+          <label>B <select id="cmp-b"></select></label>
+        </div>
+      </div>
+      <table class="datatable">
+        <thead><tr><th>Measure</th><th>A</th><th>B</th><th>A &minus; B</th></tr></thead>
+        <tbody id="cmp-body"></tbody>
+      </table>
+      <div class="note" id="cmp-note" style="margin-top:12px"></div>
+    </div>
+  </section>
+
+  <!-- ================= RELATIONSHIP ================= -->
+  <section id="view-relationship" class="view" role="tabpanel" aria-label="Relationship">
+    <div class="page"><div class="pageinner">
+      <div class="pagehead">
+        <span class="eyebrow">Analysis &middot; <span id="rel-epoch">2026 composite</span></span>
+        <h2>Does more vegetation mean a cooler surface?</h2>
+        <p>Vegetation is binned into three classes on NDVI, and surface temperature is compared
+        across those classes on every valid 40&nbsp;m cell. The tests below are computed in the
+        browser from the same grid the map draws &mdash; nothing here is typed in by hand.</p>
+      </div>
+
+      <div class="verdict" id="verdict">
+        <div class="vk">Result</div>
+        <div class="vt" id="verdict-text">&mdash;</div>
+        <div class="vs" id="verdict-sub">&mdash;</div>
+      </div>
+
+      <div class="relgrid">
+        <div class="relcard">
+          <h3>Scatter, coloured by vegetation class</h3>
+          <div class="cleg" id="cleg-scatter"></div>
+          <div class="chartbox"><canvas id="c-rel-scatter" height="300"></canvas></div>
+          <div class="cap"><span>Each dot is a 40 m cell; the line is the least-squares fit</span><span class="mono" id="rel-n"></span></div>
+        </div>
+
+        <div class="relcard">
+          <h3>Mean LST by class &plusmn; 95% CI</h3>
+          <div class="chartbox"><canvas id="c-rel-bar" height="300"></canvas></div>
+          <div class="cap"><span>Bars are class means; whiskers are 95% confidence intervals</span><span class="mono">&deg;C</span></div>
+        </div>
+
+        <div class="relcard">
+          <h3>LST spread within each class</h3>
+          <div class="chartbox"><canvas id="c-rel-box" height="300"></canvas></div>
+          <div class="cap"><span>Box = interquartile range, line = median, dots = 10th/90th percentile</span><span class="mono">&deg;C</span></div>
+        </div>
+
+        <div class="relcard">
+          <h3>Class composition per barangay</h3>
+          <div class="cleg" id="cleg-stack"></div>
+          <div class="chartbox"><canvas id="c-rel-stack" height="300"></canvas></div>
+          <div class="cap"><span>Share of each barangay's cells per class; right-hand number is % High</span><span class="mono">%</span></div>
+        </div>
+      </div>
+
+      <h3 class="relh">Class summary</h3>
+      <table class="datatable">
+        <thead><tr>
+          <th>Class</th><th>NDVI range</th><th>Cells</th><th>Share</th>
+          <th>Mean LST</th><th>95% CI</th><th>vs study area</th>
+        </tr></thead>
+        <tbody id="rel-classes"></tbody>
+      </table>
+
+      <h3 class="relh">Statistical tests</h3>
+      <table class="datatable">
+        <thead><tr><th>Test</th><th>Statistic</th><th>p</th><th>Interpretation</th></tr></thead>
+        <tbody id="rel-tests"></tbody>
+      </table>
+
+      <h3 class="relh">Pairwise comparison</h3>
+      <table class="datatable">
+        <thead><tr><th>Comparison</th><th>Difference</th><th>Welch t</th><th>p</th><th>p (Bonferroni)</th><th>Significant</th></tr></thead>
+        <tbody id="rel-pairs"></tbody>
+      </table>
+
+      <div class="note" id="rel-sens" style="margin-top:22px">&mdash;</div>
+
+      <div class="relactions">
+        <button class="btn primary" id="btn-report">Generate report</button>
+        <button class="btn" id="btn-report-print">Print / save as PDF</button>
+        <span class="mono" id="rel-built" style="font-size:10.5px;color:var(--text-3)"></span>
+      </div>
+
+      <div class="note" style="margin-top:18px">
+        <b>What these numbers can and cannot say.</b> This is one epoch, so the comparison is
+        cross-sectional: hotter and cooler places at the same moment, not a change over time. A
+        significant difference between classes is an association, not proof that planting trees
+        would cool a barangay by that many degrees. The effect size (&eta;&sup2;) states how much of
+        the LST variation the classes actually account for &mdash; it is moderate, not dominant.
+      </div>
+    </div></div>
+  </section>
+
+  <!-- ================= BARANGAYS ================= -->
+  <section id="view-barangays" class="view" role="tabpanel" aria-label="Barangays">
+    <div class="page"><div class="pageinner">
+      <div class="pagehead">
+        <span class="eyebrow">Zonal statistics &middot; <span id="tb-epoch">2026 composite</span></span>
+        <h2>Per-barangay vegetation and surface temperature</h2>
+        <p>Computed from the measured 40&nbsp;m grid &mdash; 16 Sentinel-2 L2A scenes for NDVI, 16
+        Landsat 8/9 Collection&nbsp;2 scenes for LST, median composited after cloud masking. Landsat
+        thermal is natively 100&nbsp;m and is delivered resampled, so a barangay's thermal support is
+        one hectare per native pixel. Barangays below 60 native thermal pixels are flagged rather than
+        reported as reliable zonal means. Click any row to isolate that barangay on the map.</p>
+      </div>
+
+      <div class="toolrow">
+        <label class="sr" for="tb-search">Filter barangays</label>
+        <input id="tb-search" type="search" placeholder="Filter by barangay&hellip;">
+        <span class="mono" id="tb-count" style="font-size:10.5px;color:var(--text-3)"></span>
+        <div class="spacer"></div>
+        <button class="btn" id="tb-export">Export CSV</button>
+      </div>
+
+      <div class="toolrow" id="tb-selrow" style="display:none">
+        <span class="mono" style="font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--text-3)">Isolated</span>
+        <span id="tb-selname" style="font-size:12.5px;font-weight:500"></span>
+        <span class="mono" id="tb-selval" style="font-size:10.5px;color:var(--accent)"></span>
+        <button class="btn" id="tb-selclear">Clear selection</button>
+      </div>
+
+      <table>
+        <thead><tr>
+          <th><button data-sort="name">Barangay <span class="ar"></span></button></th>
+          <th><button data-sort="ndvi">Mean NDVI <span class="ar"></span></button></th>
+          <th><button data-sort="lst">Mean LST <span class="ar"></span></button></th>
+          <th><button data-sort="resid">Heat residual <span class="ar"></span></button></th>
+          <th><button data-sort="npx">Thermal px <span class="ar"></span></button></th>
+          <th>Coverage</th>
+        </tr></thead>
+        <tbody id="tb-body"></tbody>
+      </table>
+      <div class="noresults" id="tb-none" style="display:none">No barangay matches that filter.</div>
+    </div></div>
+  </section>
+
+  <!-- ================= METHOD ================= -->
+  <section id="view-method" class="view" role="tabpanel" aria-label="Method">
+    <div class="page"><div class="pageinner">
+      <div class="pagehead">
+        <span class="eyebrow">Pipeline &amp; provenance</span>
+        <h2>How a scene becomes a number on this screen</h2>
+        <p>This console is a presentation layer over a measured composite. The rasters were computed
+        offline from satellite scenes and ship as palette PNG overlays plus quantised grids, so every
+        statistic is reproducible from files in this folder.</p>
+      </div>
+
+      <ol class="steps" style="margin-bottom:30px">
+        <li><h4>Acquire</h4><p>Sentinel-2 L2A from the Earth Search STAC catalogue, tile
+        <code>T51PTS</code>, bands <code>B04</code>/<code>B08</code> plus the 20&nbsp;m scene
+        classification layer. Landsat 8 and 9 Collection&nbsp;2 Level&nbsp;2 from the Microsoft
+        Planetary Computer STAC API, path/row <code>116/050</code>, band
+        <code>ST_B10</code> plus <code>QA_PIXEL</code>. Sixteen usable scenes of each for 2026, all
+        read as windowed cloud-optimised GeoTIFFs &mdash; no bulk download.</p></li>
+        <li><h4>Mask</h4><p>Sentinel-2 pixels outside SCL classes 4, 5, 6, 7 and 11 are dropped.
+        Landsat pixels with the fill, cloud, cloud-shadow or snow bit set in
+        <code>QA_PIXEL</code> are dropped. Masking happens before compositing; masking after it
+        contaminates the median.</p></li>
+        <li><h4>Composite</h4><p>Pixel-wise median across the sixteen scenes of each sensor. The
+        Philippines is heavily cloud-affected, so a single scene is a cloud map, not a study area.
+        NDVI is computed per scene from <code>B08</code> and <code>B04</code> before compositing,
+        then aggregated 4&nbsp;&times;&nbsp;4 to the 40&nbsp;m grid.</p></li>
+        <li><h4>Derive</h4><p>LST from <code>ST_B10</code>: digital number &times; 0.00341802 + 149,
+        then &minus;273.15 for &deg;C. The heat residual is the LST left after regressing LST on NDVI
+        across the study area &mdash; positive means hotter than the vegetation cover predicts.</p></li>
+        <li><h4>Classify</h4><p>NDVI is cut into three vegetation classes at 0.10 and 0.20 &mdash;
+        fixed thresholds, not terciles fitted to this dataset, so the classes mean the same thing in
+        another barangay or another year. The sensitivity note on the Relationship page shows that
+        equal-thirds cuts give the same ordering and nearly the same gap.</p></li>
+        <li><h4>Test</h4><p>Surface temperature is compared across the three classes with Pearson
+        correlation, ordinary least squares, one-way ANOVA, Kruskal&ndash;Wallis and pairwise Welch
+        tests with Bonferroni adjustment, on every valid cell. The distributions are computed from
+        scratch in <code>analysis.js</code> &mdash; no library, no lookup table &mdash; and the same
+        maths runs in <code>stats.js</code> on the server, so the page and the report agree.</p></li>
+        <li><h4>Serve</h4><p>The raster ships as palette PNGs in <code>tiles/</code>, the values as
+        quantised base64 grids in <code>data.js</code>, and the geometry embedded in the same file
+        (<code>file://</code> cannot fetch a sibling file). Basemap tiles are the only thing fetched
+        at runtime when the page is opened offline.</p></li>
+      </ol>
+
+      <div class="cards" style="margin-bottom:26px">
+        <div class="card">
+          <div class="idx">SCENES</div>
+          <h3>What was composited</h3>
+          <p id="card-scenes">&mdash;</p>
+        </div>
+        <div class="card">
+          <div class="idx">SCALE</div>
+          <h3>Resolution honesty</h3>
+          <p>NDVI is natively 10&nbsp;m, LST natively 100&nbsp;m thermal. Both are shown on one
+          40&nbsp;m grid, so the NDVI layer is generalised and the LST layer is finer than its real
+          support. Any per-barangay thermal statistic inherits the 100&nbsp;m uncertainty.</p>
+        </div>
+        <div class="card">
+          <div class="idx">LIMITS</div>
+          <h3>What this cannot say</h3>
+          <p>LST is a surface radiometric quantity measured at about 10:15 local, not air
+          temperature. Twelve of the sixteen Landsat dates fall in the dry season, so this is closer
+          to a dry-season figure than an annual one. NDVI explains a moderate share of LST variance;
+          albedo, imperviousness and building density carry the rest.</p>
+        </div>
+        <div class="card">
+          <div class="idx">ACCESS</div>
+          <h3>Who may do what</h3>
+          <p>Served by <code>server.js</code> the console sits behind a login. Viewers read the
+          console and the relationship analysis; analysts also generate the report and export CSV;
+          admins manage accounts and read the append-only audit trail. The browser hides what a role
+          cannot do, and the server refuses it anyway &mdash; the button state is a courtesy, the
+          <code>403</code> is the control.</p>
+        </div>
+        <div class="card">
+          <div class="idx">FRESHNESS</div>
+          <h3>Why this says &ldquo;as of&rdquo;</h3>
+          <p>The layer is dated, not live. Sentinel-2 revisits every ~3.9 days but only ~9% of scenes
+          are under 20% cloud; Landsat thermal arrives every ~10 days and the newest pass is often
+          cloud-covered. Rebuilding the composite is a batch job, so the honest label is the newest
+          scene date, shown in the top bar and repeated in every report.</p>
+        </div>
+        <div class="card">
+          <div class="idx">BOUNDARIES</div>
+          <h3>Where the polygons come from</h3>
+          <p>Twenty barangay boundaries from OpenStreetMap <code>admin_level=10</code> relations,
+          ODbL. Community-mapped, not the PSA legal boundary set &mdash; cross-check against PSGC
+          before printing maps.</p>
+        </div>
+      </div>
+
+      <div class="note" style="margin-bottom:22px">
+        <b>This folder carries measured data, not a placeholder.</b> The rasters are a 2026 median
+        composite of real Sentinel-2 and Landsat scenes over Novaliches. They are still a single
+        epoch, so the console shows no trend and no change layer; a second epoch is what those views
+        would need.
+      </div>
+
+      <div class="kv">
+        <div>Study area</div><div>Novaliches, Quezon City, Philippines &mdash; 20 barangays</div>
+        <div>Extent</div><div id="kv-ext">&mdash;</div>
+        <div>Analysis grid</div><div id="kv-grid">&mdash;</div>
+        <div>Composite</div><div id="kv-comp">&mdash;</div>
+        <div>Imagery</div><div>Copernicus Sentinel-2 &middot; USGS Landsat &middot; open access</div>
+        <div>Basemap</div><div>CARTO and OpenStreetMap tiles &middot; attribution in map corner</div>
+      </div>
+    </div></div>
+  </section>
+
+</main>
+
+<footer class="statusbar">
+  <span><i class="dot"></i><b>Ready</b></span>
+  <span>Source <b>Sentinel-2 + Landsat</b></span>
+  <span>Composite <b id="sb-epoch">2026</b></span>
+  <span>Layer <b id="sb-layer">NDVI</b></span>
+  <span>Grid <b id="sb-grid">&mdash;</b></span>
+  <span>Sampled pairs <b id="sb-cells">&mdash;</b></span>
+  <span>Zoom <b id="sb-zoom">1.0&times;</b></span>
+  <span style="margin-left:auto">GreenSpace&ndash;LST &middot; Novaliches 2026</span>
+</footer>
+
+<script src="vendor/leaflet.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+  <script src="auth.js"></script>
+  <script src="analysis.js"></script>
+  <script src="compare.js"></script>
+
+<div id="loginwrap" class="loginwrap" role="dialog" aria-modal="true" aria-labelledby="login-title">
+  <form id="loginform" class="loginbox" autocomplete="on">
+    <h2 id="login-title">Sign in</h2>
+    <p>The console is served with role-based access: viewers read, analysts generate reports and
+    exports, admins manage accounts and read the audit trail.</p>
+    <label>Username<input id="login-user" name="username" autocomplete="username" required></label>
+    <label>Password<input id="login-pass" name="password" type="password" autocomplete="current-password" required></label>
+    <div class="loginerr" id="login-err"></div>
+    <button class="btn primary" type="submit">Sign in</button>
+  </form>
+</div>
+</body>
+</html>

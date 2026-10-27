@@ -1,0 +1,5 @@
+{"ts":"2026-10-17T06:10:46.718Z","event":"report.generate","actor":"public","role":"demo","format":"html"}
+{"ts":"2026-10-17T06:10:46.975Z","event":"denied.role","actor":"public","role":"demo","cap":"users","path":"/api/users"}
+{"ts":"2026-10-17T06:10:46.992Z","event":"denied.role","actor":"public","role":"demo","cap":"audit","path":"/api/audit"}
+{"ts":"2026-10-17T06:11:30.933Z","event":"report.generate","actor":"public","role":"demo","format":"browser"}
+{"ts":"2026-10-17T06:12:45.657Z","event":"report.generate","actor":"public","role":"demo","format":"browser"}
