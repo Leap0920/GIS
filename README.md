@@ -1,7 +1,7 @@
-# GreenSpace–LST — urban vegetation and surface temperature, Novaliches 2026
+# GreenSpace–LST — urban vegetation and surface temperature, Quezon City 2026
 
 An offline-capable analysis console over a measured Sentinel-2 / Landsat composite of
-20 barangays in Novaliches, Quezon City. It maps vegetation and surface temperature,
+all 142 barangays of Quezon City (162.48 km²). It maps vegetation and surface temperature,
 classifies vegetation into three levels, tests whether higher vegetation goes with a
 cooler surface, compares barangays side by side, generates a report, and — when served
 over HTTP — puts the whole thing behind a role-based login.
@@ -88,7 +88,7 @@ This is one epoch: a cross-sectional association, not a demonstrated causal cool
 |---|---|
 | `index.html` | markup for the five views |
 | `styles.css` | themes, layout, Leaflet overrides, mobile rules |
-| `data.js` | `window.SAFENET`: four quantised base64 grids, grid metadata, scales, class cuts, 20 names, 20 polygons, per-barangay stats, `asof` |
+| `data.js` | `window.SAFENET`: four quantised base64 grids, grid metadata, scales, class cuts, 142 names, 142 polygons, per-barangay stats, `asof` |
 | `app.js` | the map, basemaps, layers, selection, readout, console charts, table, CSV export, deep links, self-test |
 | `analysis.js` | vegetation classes, hypothesis tests, the Relationship view, the browser report |
 | `compare.js` | two synced maps plus the barangay A/B panel |
@@ -99,29 +99,41 @@ This is one epoch: a cross-sectional association, not a demonstrated causal cool
 | `test_rbac.js` | end-to-end role tests over HTTP |
 | `tiles/*.png` | palette rasters: `{ndvi,lst,resid}-{dark,light}.png` and `class-{dark,light}.png` |
 | `vendor/` | Leaflet 1.9.4 (js, css, marker images), vendored so nothing is fetched from a CDN |
-| `build/bundle.json` | the composite: base64 grids, barangay polygons, zonal stats |
+| `build/build_qc.py` | rebuilds `data.js` + `tiles/*.png` for all of Quezon City from the cached scene windows in `C:\codes\SafeNet-data` (no network) |
+| `build/bundle.json` | the superseded Novaliches bundle, kept for reference only |
 | `index.mockup.html` | the original synthetic sample, kept for reference only |
 | `build/` | verification screenshots (`r*`, `c*`, `a*`, `cdp-*`) |
 | `preview.png` | screenshot of the console |
 | `docs/proposal-review.md` | prior work in the study area, technical gaps, decisions to lock |
 
-The two build scripts (`build_bundle.py`, `build_assets.py`) live in the Hermes scratch
-directory, not here; the outputs they produced are committed so the page runs as-is.
+`build/build_qc.py` is the current builder. It warps the per-scene median windows onto the
+40 m EPSG:32651 grid with an exact weighted average (no nodata sentinel, no GDAL `average`
+resampling), writes the quantised base64 grids into `data.js`, and encodes the eight palette
+overlays with a hand-rolled PNG writer because GDAL's PNG driver is read-only in this build.
+The older `build_bundle.py` / `build_assets.py` lived in the Hermes scratch directory; their
+Novaliches outputs are still committed so the page runs as-is.
 
 ## Data
 
-Sentinel-2 L2A (tile T51PTS, 10 m, 16 scenes of 2026, SCL-masked) for NDVI; Landsat 8/9
-Collection 2 Level 2 (path/row 116/050, `ST_B10`, 16 scenes of 2026, `QA_PIXEL`-masked) for
-land surface temperature. Both are pixel-wise median composites, resampled to a 40 m grid.
+Sentinel-2 L2A (tile T51PTS, 10 m, 16 usable scenes of 2026, SCL-masked) for NDVI; Landsat 8/9
+Collection 2 Level 2 (path/row 116/050, `ST_B10`, 15 usable scenes of 2026, `QA_PIXEL`-masked)
+for land surface temperature. Both are pixel-wise median composites, resampled to a 40 m grid.
 Newest scene: Sentinel-2 **2026-10-15**, Landsat **2026-10-06**; the composite was built
-**2026-10-17**. Source CSVs and the pipeline live in `../SafeNet-data`.
+**2026-10-31**. Source CSVs and the pipeline live in `../SafeNet-data`.
 
 NDVI is computed per scene from `B08` and `B04`, then aggregated to the 40 m grid. LST is
 `ST_B10` × 0.00341802 + 149 − 273.15, delivered resampled. The heat residual is LST minus the
 value predicted by a least-squares fit of LST on NDVI across the study area — positive means
 hotter than the vegetation cover predicts.
 
-Boundaries: OpenStreetMap `admin_level=10`, ODbL — community-mapped, not the PSA legal set.
+Boundaries: PSA `Adm4` (sub-municipality) shapefile, 2026 release — 142 QC polygons, each carrying its 10-digit `adm4_psgc` join key.
+
+The analysis grid is the bounding box of those 142 polygons, and that box is 15.8 x 20.8 km around
+a 162 km² city — 49.5 % of it lies outside Quezon City. The palette tiles are therefore masked to
+the barangay union at build time, so the overlay on the map is the city's own footprint rather than
+a rectangle that paints Caloocan, Valenzuela, Marikina and San Jose del Monte in QC colours. The
+quantised grids in `data.js` are untouched; per-cell statistics were always restricted to cells
+inside a barangay.
 
 ## Interface behaviour
 
@@ -144,7 +156,7 @@ Boundaries: OpenStreetMap `admin_level=10`, ODbL — community-mapped, not the P
   Sentinel-2 revisits every ~3.9 days but only ~9 % of scenes are under 20 % cloud; Landsat
   thermal arrives every ~10 days. A true daily thermal layer only exists at 1 km (MODIS).
 - **LST is a surface radiometric quantity** at about 10:15 local, not air temperature; 12 of
-  16 Landsat dates fall in the dry season.
+  15 Landsat dates fall in the dry season.
 - **Landsat thermal is natively 100 m**, so per-barangay thermal statistics inherit that support.
   Barangays under 60 native thermal pixels are flagged rather than reported as reliable.
 - **One epoch.** There is no trend and no change layer, and none is drawn.

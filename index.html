@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GreenSpace–LST Console · Novaliches 2026</title>
-<meta name="description" content="Measured NDVI and land surface temperature console for 20 barangays in Novaliches, Quezon City. Sentinel-2 and Landsat 2026 median composite.">
+<title>GreenSpace–LST Console · Quezon City 2026</title>
+<meta name="description" content="Measured NDVI and land surface temperature console for all 142 barangays of Quezon City. Sentinel-2 and Landsat 2026 median composite.">
 <link rel="stylesheet" href="vendor/leaflet.css">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -20,7 +20,7 @@
   </div>
   <div class="brand">
     <h1>GreenSpace&ndash;LST Console</h1>
-    <span>Novaliches, Quezon City &middot; 20 barangays</span>
+    <span>Quezon City &middot; 142 barangays</span>
   </div>
 
   <nav class="tabs" role="tablist" aria-label="Views">
@@ -52,19 +52,19 @@
       <div class="block">
         <h2>Layers <em id="layer-active">NDVI</em></h2>
         <button class="layer" data-layer="ndvi" aria-pressed="true">
-          <span class="sw" style="background:#6f9e4e"></span>
+          <span class="sw"></span>
           <span class="nm">Vegetation index</span><span class="k">NDVI</span>
         </button>
         <button class="layer" data-layer="lst" aria-pressed="false">
-          <span class="sw" style="background:#c25a1e"></span>
+          <span class="sw"></span>
           <span class="nm">Surface temperature</span><span class="k">LST</span>
         </button>
         <button class="layer" data-layer="resid" aria-pressed="false">
-          <span class="sw" style="background:#8a8a95"></span>
+          <span class="sw"></span>
           <span class="nm">Heat residual</span><span class="k">LST&#8211;f(NDVI)</span>
         </button>
         <button class="layer" data-layer="class" aria-pressed="false">
-          <span class="sw" style="background:linear-gradient(90deg,#96624a 33%,#d8c860 33% 66%,#40965c 66%)"></span>
+          <span class="sw"></span>
           <span class="nm">Vegetation class</span><span class="k">3 bins</span>
         </button>
       </div>
@@ -122,7 +122,7 @@
 
     <div class="mapwrap">
       <div id="map" class="leaflet-host" role="application"
-        aria-label="Map of Novaliches with the measured raster. Drag to pan, scroll to zoom, click a barangay to select it."></div>
+        aria-label="Map of Quezon City with the measured raster. Drag to pan, scroll to zoom, click a barangay to select it."></div>
 
       <div class="mapframe" aria-hidden="true"></div>
 
@@ -421,13 +421,13 @@
         <code>T51PTS</code>, bands <code>B04</code>/<code>B08</code> plus the 20&nbsp;m scene
         classification layer. Landsat 8 and 9 Collection&nbsp;2 Level&nbsp;2 from the Microsoft
         Planetary Computer STAC API, path/row <code>116/050</code>, band
-        <code>ST_B10</code> plus <code>QA_PIXEL</code>. Sixteen usable scenes of each for 2026, all
+        <code>ST_B10</code> plus <code>QA_PIXEL</code>. Sixteen usable Sentinel-2 and fifteen Landsat scenes for 2026, all
         read as windowed cloud-optimised GeoTIFFs &mdash; no bulk download.</p></li>
         <li><h4>Mask</h4><p>Sentinel-2 pixels outside SCL classes 4, 5, 6, 7 and 11 are dropped.
         Landsat pixels with the fill, cloud, cloud-shadow or snow bit set in
         <code>QA_PIXEL</code> are dropped. Masking happens before compositing; masking after it
         contaminates the median.</p></li>
-        <li><h4>Composite</h4><p>Pixel-wise median across the sixteen scenes of each sensor. The
+        <li><h4>Composite</h4><p>Pixel-wise median across the usable scenes of each sensor. The
         Philippines is heavily cloud-affected, so a single scene is a cloud map, not a study area.
         NDVI is computed per scene from <code>B08</code> and <code>B04</code> before compositing,
         then aggregated 4&nbsp;&times;&nbsp;4 to the 40&nbsp;m grid.</p></li>
@@ -466,7 +466,7 @@
           <div class="idx">LIMITS</div>
           <h3>What this cannot say</h3>
           <p>LST is a surface radiometric quantity measured at about 10:15 local, not air
-          temperature. Twelve of the sixteen Landsat dates fall in the dry season, so this is closer
+          temperature. Twelve of the fifteen Landsat dates fall in the dry season, so this is closer
           to a dry-season figure than an annual one. NDVI explains a moderate share of LST variance;
           albedo, imperviousness and building density carry the rest.</p>
         </div>
@@ -490,23 +490,26 @@
         <div class="card">
           <div class="idx">BOUNDARIES</div>
           <h3>Where the polygons come from</h3>
-          <p>Twenty barangay boundaries from OpenStreetMap <code>admin_level=10</code> relations,
-          ODbL. Community-mapped, not the PSA legal boundary set &mdash; cross-check against PSGC
-          before printing maps.</p>
+          <p>All 142 barangay boundaries from the Philippine Statistics Authority
+          <code>Adm4</code> (sub-municipality) boundary shapefile, 2026 release, via the
+          <code>philippines-psgc-shapefiles</code> distribution. Every polygon carries its
+          10-digit <code>adm4_psgc</code> code, so each barangay joins directly to any PSGC-keyed
+          table the Quezon City LGU supplies. Boundary generalisation is PSA's, not ours.</p>
         </div>
       </div>
 
       <div class="note" style="margin-bottom:22px">
         <b>This folder carries measured data, not a placeholder.</b> The rasters are a 2026 median
-        composite of real Sentinel-2 and Landsat scenes over Novaliches. They are still a single
+        composite of real Sentinel-2 and Landsat scenes over Quezon City. They are still a single
         epoch, so the console shows no trend and no change layer; a second epoch is what those views
         would need.
       </div>
 
       <div class="kv">
-        <div>Study area</div><div>Novaliches, Quezon City, Philippines &mdash; 20 barangays</div>
+        <div>Study area</div><div>Quezon City, Philippines &mdash; 142 barangays</div>
         <div>Extent</div><div id="kv-ext">&mdash;</div>
         <div>Analysis grid</div><div id="kv-grid">&mdash;</div>
+        <div>Overlay clip</div><div>barangay union &mdash; the raster shows the city, not its bounding box (the box is 49.5&nbsp;% outside QC)</div>
         <div>Composite</div><div id="kv-comp">&mdash;</div>
         <div>Imagery</div><div>Copernicus Sentinel-2 &middot; USGS Landsat &middot; open access</div>
         <div>Basemap</div><div>CARTO and OpenStreetMap tiles &middot; attribution in map corner</div>
@@ -524,7 +527,7 @@
   <span>Grid <b id="sb-grid">&mdash;</b></span>
   <span>Sampled pairs <b id="sb-cells">&mdash;</b></span>
   <span>Zoom <b id="sb-zoom">1.0&times;</b></span>
-  <span style="margin-left:auto">GreenSpace&ndash;LST &middot; Novaliches 2026</span>
+  <span style="margin-left:auto">GreenSpace&ndash;LST &middot; Quezon City 2026</span>
 </footer>
 
 <script src="vendor/leaflet.js"></script>

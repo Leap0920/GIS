@@ -521,7 +521,7 @@
        <td class="n">${(r.share[2] * 100).toFixed(1)}%</td></tr>`).join('');
 
     return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
-<title>Vegetation and surface temperature — Novaliches 2026</title>
+<title>Vegetation and surface temperature — Quezon City 2026</title>
 <style>
  body{font:13px/1.6 Georgia,serif;color:#1b1b1b;max-width:900px;margin:44px auto;padding:0 26px}
  h1{font-size:23px;margin:0 0 4px;letter-spacing:-.01em}
@@ -538,7 +538,7 @@
  footer{margin-top:34px;border-top:1px solid #ddd;padding-top:10px;font:11px/1.6 ui-monospace,monospace;color:#777}
 </style></head><body>
 <h1>Urban vegetation and land surface temperature</h1>
-<div class="meta">Novaliches, Quezon City · 20 barangays · 2026 median composite<br>
+<div class="meta">Quezon City · 142 barangays · 2026 median composite<br>
 Generated ${when} · role ${role} · built ${B.asof.built} · newest scene ${B.asof.s2_last} (Sentinel-2), ${B.asof.ls_last} (Landsat)</div>
 
 <div class="lede"><b>Result.</b> Cells in High vegetation are
@@ -590,7 +590,7 @@ that support. A significant class difference is an association, not a demonstrat
 NDVI explains ${Math.round(a.r2 * 100)}% of LST variance; albedo, imperviousness and building density
 carry the remainder.</p>
 
-<footer>GreenSpace–LST · Novaliches 2026 · report generated from the measured composite.
+<footer>GreenSpace–LST · Quezon City 2026 · report generated from the measured composite.
 Boundaries: OpenStreetMap admin_level=10, ODbL. Imagery: Copernicus Sentinel-2, USGS Landsat.</footer>
 </body></html>`;
   }

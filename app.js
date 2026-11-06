@@ -1,7 +1,7 @@
 "use strict";
 
 /* ============================================================
-   GreenSpace–LST Console · Novaliches 2026
+   GreenSpace–LST Console · Quezon City 2026
    Measured data from window.SAFENET (data.js). Map is Leaflet,
    basemap tiles at runtime, raster overlay from tiles/*.png.
    ============================================================ */
@@ -87,6 +87,25 @@ function cssRamp(which){
   }
   return `linear-gradient(90deg, ${parts.join(',')})`;
 }
+function classColors(){
+  const amt = themeLift();
+  return B.classes.colors.map(c => liftRGB(c, amt));
+}
+function classGradient(){
+  const C = classColors(), n = C.length;
+  return 'linear-gradient(90deg, ' + C.map((c, i) =>
+    `rgb(${c.join(',')}) ${(i*100/n).toFixed(2)}% ${((i+1)*100/n).toFixed(2)}%`
+  ).join(',') + ')';
+}
+function layerGradient(which){
+  return which === 'class' ? classGradient() : cssRamp(which);
+}
+function paintSwatches(){
+  document.querySelectorAll('.layer[data-layer]').forEach(b => {
+    const sw = b.querySelector('.sw');
+    if (sw) sw.style.background = layerGradient(b.dataset.layer);
+  });
+}
 
 /* ------------------------------------------------------------
    State
@@ -112,6 +131,11 @@ const map = L.map('map', {
   preferCanvas: false
 });
 map.fitBounds(BOUNDS, { padding: [10, 10] });
+
+/* The measured raster gets its own pane below overlayPane (400) so the
+   barangay vectors are never buried under a 78%-opaque image. */
+map.createPane('rasterPane');
+map.getPane('rasterPane').style.zIndex = 350;
 
 const ESRI = 'https://services.arcgisonline.com/ArcGIS/rest/services/';
 const ESRI_ATTR = 'Tiles &copy; <a href="https://www.esri.com/">Esri</a> &mdash; Esri, HERE, Garmin, OpenStreetMap contributors';
@@ -164,7 +188,8 @@ function setRaster(){
   const key = state.layer + '-' + state.theme;
   if (!overlayCache[key]){
     overlayCache[key] = L.imageOverlay(rasterPath(state.layer, state.theme), BOUNDS, {
-      opacity: state.overlay, interactive: false, className: 'raster-overlay'
+      opacity: state.overlay, interactive: false, className: 'raster-overlay',
+      pane: 'rasterPane'
     });
   }
   raster = overlayCache[key];
@@ -179,6 +204,20 @@ function setRaster(){
 let geo = null;
 let selectedLayer = null;
 const layerById = {};
+
+/* 142 names inside one city block of screen space collide below this zoom,
+   so labels appear once the map is close enough for them to be readable. */
+const LABEL_MIN_ZOOM = 13;
+function syncLabels(){
+  if (!geo) return;
+  const show = state.labels && map.getZoom() >= LABEL_MIN_ZOOM;
+  geo.eachLayer(l => show ? l.openTooltip() : l.closeTooltip());
+  const btn = document.getElementById('t-labels');
+  if (btn) btn.title = state.labels
+    ? (show ? 'Barangay names on' : 'Barangay names on \u2014 they appear when you zoom in past ' + LABEL_MIN_ZOOM)
+    : 'Barangay names off';
+}
+map.on('zoomend', syncLabels);
 
 function polyStyle(i){
   const on = state.sel && state.sel.id === i;
@@ -207,7 +246,7 @@ geo = L.geoJSON(B.geo, {
     lyr.on('mouseout', () => { if (!state.sel) lyr.setStyle(polyStyle(i)); });
   }
 }).addTo(map);
-if (!state.labels) geo.eachLayer(l => l.closeTooltip());
+syncLabels();
 setRaster();
 paintSelection();
 
@@ -309,17 +348,17 @@ const LEGEND_NOTE = {
 function renderLegend(){
   const S = SCALES[state.layer];
   document.getElementById('lg-title').textContent = S.title;
+  paintSwatches();
   if (state.layer === 'class'){
-    const C = B.classes.colors, L = B.classes.labels, cut = B.classes.cuts;
-    document.getElementById('lg-bar').style.background =
-      `linear-gradient(90deg, rgb(${C[0]}) 0 33.3%, rgb(${C[1]}) 33.3% 66.6%, rgb(${C[2]}) 66.6% 100%)`;
+    const L = B.classes.labels, cut = B.classes.cuts;
+    document.getElementById('lg-bar').style.background = classGradient();
     document.getElementById('lg-ticks').innerHTML = L.map(l => `<span>${l}</span>`).join('');
     document.getElementById('lg-unit').textContent = 'NDVI thresholds ' + cut.join(' / ');
     document.getElementById('lg-note').textContent = 'categorical \u00B7 not a gradient';
     document.getElementById('lg-zero').style.display = 'none';
     return;
   }
-  document.getElementById('lg-bar').style.background = cssRamp(state.layer);
+  document.getElementById('lg-bar').style.background = layerGradient(state.layer);
   document.getElementById('lg-ticks').innerHTML = S.ticks.map(t => `<span>${t}</span>`).join('');
   document.getElementById('lg-unit').textContent = S.unit + ' \u00B7 ' + S.pct;
   document.getElementById('lg-note').textContent = LEGEND_NOTE[state.layer];
@@ -557,7 +596,7 @@ function setReadout(ll){
   if (!ll){
     const n = Array.from(VALID).reduce((a, b) => a + b, 0);
     ro('ro-title').textContent = 'Study area \u00B7 mean of ' + n.toLocaleString() + ' cells';
-    ro('ro-brgy').textContent = '20 barangays';
+    ro('ro-brgy').textContent = N_SITES + ' barangays';
     ro('ro-ndvi').textContent = meanAll('ndvi').toFixed(3);
     ro('ro-lst').textContent = meanAll('lst').toFixed(2) + ' \u00B0C';
     ro('ro-res').textContent = (meanAll('resid') >= 0 ? '+' : '') + meanAll('resid').toFixed(2) + ' \u00B0C';
@@ -679,8 +718,7 @@ document.getElementById('t-bounds').addEventListener('click', e => {
 document.getElementById('t-labels').addEventListener('click', e => {
   state.labels = !state.labels;
   e.currentTarget.setAttribute('aria-pressed', String(state.labels));
-  if (!geo) return;
-  geo.eachLayer(l => { state.labels ? l.openTooltip() : l.closeTooltip(); });
+  syncLabels();
 });
 
 /* map controls */
